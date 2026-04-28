@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo A — Bandeja de Aprobación · Extornos</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root {
+    --brand: #0f172a;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --ok: #059669;
+    --ok-soft: #ecfdf5;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --orange: #f97316;
+    --orange-soft: #fed7aa;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --critical: #991b1b;
+    --purple: #7c3aed;
+    --purple-soft: #ede9fe;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --bg: #f1f5f9;
+    --border: #e2e8f0;
+  }
+  body { background: var(--bg); color: var(--ink); font-size: 13.5px; height: 100vh; overflow: hidden; }
+
+  /* Top bar */
+  .top {
+    background: var(--brand); color: #fff;
+    padding: .65rem 1.1rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .top h1 { font-size: 1rem; margin: 0; font-weight: 600; }
+  .top .sub { color: #94a3b8; font-size: .76rem; }
+  .kpi { display: flex; gap: 1.25rem; margin-left: auto; }
+  .kpi .item { text-align: right; }
+  .kpi .label { font-size: .68rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .val { font-size: 1rem; font-weight: 700; }
+  .kpi .val.warn { color: #fde047; }
+  .kpi .val.ok { color: #86efac; }
+  .kpi .val.danger { color: #fca5a5; }
+
+  /* Layout */
+  .layout {
+    display: grid; grid-template-columns: 380px 1fr;
+    height: calc(100vh - 53px);
+  }
+
+  /* List pane */
+  .list-pane {
+    background: #fff; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .list-head {
+    padding: .75rem .85rem; border-bottom: 1px solid var(--border);
+  }
+  .search-input { position: relative; }
+  .search-input i {
+    position: absolute; left: .65rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: .85rem;
+  }
+  .search-input input { padding-left: 2rem; font-size: .85rem; }
+
+  .filter-chips { display: flex; gap: .3rem; margin-top: .55rem; flex-wrap: wrap; }
+  .chip {
+    padding: .25rem .55rem; border-radius: 999px;
+    background: #f1f5f9; color: var(--muted);
+    font-size: .7rem; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: .3rem;
+  }
+  .chip-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 16px; padding: 0 .3rem;
+    background: rgba(0,0,0,.08); border-radius: 999px;
+    font-size: .62rem; font-weight: 700;
+  }
+  .chip.active { background: var(--accent-soft); color: var(--accent); border-color: #bfdbfe; }
+  .chip.active .chip-count { background: var(--accent); color: #fff; }
+
+  .list-body { flex: 1; overflow-y: auto; }
+  .extorno {
+    padding: .65rem .85rem; border-bottom: 1px solid #f1f5f9;
+    cursor: pointer; display: flex; gap: .65rem;
+    border-left: 3px solid transparent;
+  }
+  .extorno:hover { background: #f8fafc; }
+  .extorno.active {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    padding-left: calc(.85rem - 3px);
+  }
+  .ext-icon {
+    width: 38px; height: 38px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem; flex-shrink: 0;
+  }
+  .ext-icon.tipo-cuota   { background: var(--accent); }
+  .ext-icon.tipo-caja    { background: var(--orange); }
+  .ext-icon.tipo-desemb  { background: var(--purple); }
+  .ext-icon.tipo-cuadre  { background: var(--danger); }
+  .ext-body { flex: 1; min-width: 0; }
+  .ext-tipo {
+    font-size: .65rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600;
+  }
+  .ext-asunto {
+    font-weight: 600; font-size: .82rem; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ext-meta { font-size: .68rem; color: var(--muted); margin-top: .15rem; }
+  .ext-row {
+    display: flex; justify-content: space-between; align-items: center; margin-top: .25rem;
+  }
+  .ext-monto { font-weight: 700; font-size: .85rem; color: var(--ink); }
+  .ext-tag {
+    padding: .1rem .4rem; border-radius: 4px;
+    font-size: .62rem; font-weight: 700;
+  }
+  .ext-tag.urgente { background: var(--danger-soft); color: var(--danger); }
+  .ext-tag.normal  { background: var(--warn-soft); color: var(--warn); }
+  .ext-tag.demora  { background: var(--critical); color: #fff; }
+
+  .list-footer {
+    padding: .55rem .85rem; border-top: 1px solid var(--border);
+    background: #f8fafc; font-size: .72rem; color: var(--muted);
+    display: flex; justify-content: space-between;
+  }
+
+  /* Workspace */
+  .workspace { background: var(--bg); overflow-y: auto; padding: 1rem; }
+
+  .ws-head {
+    background: #fff; border-radius: 10px; border: 1px solid var(--border);
+    padding: 1rem 1.1rem; margin-bottom: .9rem;
+    display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
+  }
+  .ws-icon {
+    width: 56px; height: 56px; border-radius: 12px;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .ws-info h2 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+  .ws-info .meta { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
+  .ws-info .meta i { margin-right: .15rem; }
+  .ws-actions { display: flex; gap: .35rem; margin-left: auto; flex-wrap: wrap; }
+
+  .qa-btn {
+    padding: .42rem .65rem; border: 1px solid var(--border);
+    background: #fff; border-radius: 6px;
+    font-size: .78rem; font-weight: 500; color: var(--ink);
+    display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
+  }
+  .qa-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .qa-btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .qa-btn.danger:hover { background: var(--critical); border-color: var(--critical); color: #fff; }
+  .qa-btn.success { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .qa-btn.success:hover { background: #047857; border-color: #047857; color: #fff; }
+
+  /* KPIs del extorno */
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: .65rem;
+    margin-bottom: .9rem;
+  }
+  .ckpi {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    padding: .7rem .85rem;
+  }
+  .ckpi .lbl {
+    font-size: .65rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600;
+  }
+  .ckpi .val {
+    font-size: 1.25rem; font-weight: 700; margin-top: .15rem; line-height: 1.1;
+  }
+  .ckpi.danger .val { color: var(--danger); }
+  .ckpi.warn .val { color: var(--warn); }
+
+  /* Tabs */
+  .tabs {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 8px 8px 0 0; border-bottom: none;
+    padding: 0 .85rem; display: flex;
+  }
+  .tab {
+    padding: .65rem 1rem; color: var(--muted); font-size: .85rem;
+    font-weight: 500; border-bottom: 2px solid transparent; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .35rem;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tab-panel {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 0 0 8px 8px; padding: 1rem;
+  }
+
+  /* Comparison antes/después */
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center;
+    margin-bottom: 1rem;
+  }
+  .compare-card {
+    background: #f8fafc; border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem;
+  }
+  .compare-card.before { border-left: 3px solid var(--muted); }
+  .compare-card.after { border-left: 3px solid var(--ok); }
+  .compare-card h4 {
+    font-size: .68rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 700; margin: 0 0 .55rem;
+  }
+  .compare-row {
+    display: flex; justify-content: space-between; padding: .25rem 0;
+    font-size: .82rem;
+  }
+  .compare-row strong { font-weight: 600; }
+  .arrow {
+    font-size: 1.5rem; color: var(--accent);
+  }
+
+  /* Motivo */
+  .motivo-box {
+    background: var(--warn-soft); border: 1px solid #fde68a; border-left: 3px solid var(--warn);
+    border-radius: 6px; padding: .85rem 1rem; margin-bottom: 1rem;
+  }
+  .motivo-box .lbl {
+    font-size: .68rem; color: #92400e; text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 700; margin-bottom: .35rem;
+  }
+  .motivo-box .text { font-size: .85rem; color: #78350f; line-height: 1.5; }
+  .motivo-box .firma {
+    margin-top: .5rem; padding-top: .5rem; border-top: 1px solid #fde68a;
+    font-size: .72rem; color: #92400e;
+  }
+
+  /* Línea de tiempo del trámite */
+  .timeline { position: relative; padding-left: 1.4rem; margin: .5rem 0 1rem; }
+  .timeline::before {
+    content: ''; position: absolute; left: 9px; top: .5rem; bottom: .5rem;
+    width: 2px; background: var(--border);
+  }
+  .tl-item { position: relative; margin-bottom: .8rem; }
+  .tl-icon {
+    position: absolute; left: -1.4rem; top: .25rem;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; color: var(--accent);
+  }
+  .tl-icon.ok { border-color: var(--ok); color: var(--ok); }
+  .tl-icon.warn { border-color: var(--warn); color: var(--warn); }
+  .tl-icon.muted { border-color: var(--border); color: var(--muted); background: #f8fafc; }
+  .tl-content {
+    background: #f8fafc; border: 1px solid var(--border);
+    border-radius: 6px; padding: .55rem .8rem;
+  }
+  .tl-title { font-size: .82rem; font-weight: 600; }
+  .tl-meta { font-size: .68rem; color: var(--muted); margin-top: .15rem; }
+
+  /* Decisión actions */
+  .decision-bar {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem; margin-top: 1rem;
+  }
+  .decision-bar h4 {
+    font-size: .82rem; font-weight: 600; margin: 0 0 .65rem;
+  }
+  .decision-bar textarea {
+    width: 100%; padding: .55rem .65rem; font-size: .85rem;
+    border: 1px solid var(--border); border-radius: 6px; resize: vertical;
+    margin-bottom: .65rem;
+  }
+  .decision-actions { display: flex; gap: .5rem; justify-content: flex-end; }
+
+  /* Pill estado */
+  .pill-estado {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .3rem .65rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 600;
+  }
+  .pill-pendiente { background: var(--warn-soft); color: #92400e; }
+  .pill-aprobado { background: var(--ok-soft); color: var(--ok); }
+  .pill-rechazado { background: var(--danger-soft); color: var(--danger); }
+  .pill-aplicado { background: var(--accent-soft); color: var(--accent); }
+
+  .watermark {
+    position: fixed; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,.6); color: #fff; padding: .25rem .6rem;
+    font-size: .7rem; border-radius: 4px; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="top">
+  <i class="bi bi-arrow-counterclockwise text-warning fs-5"></i>
+  <div>
+    <h1>Extornos · Bandeja de Aprobación</h1>
+    <div class="sub">Supervisor de Crédito · 23 de abril, 2026</div>
+  </div>
+  <div class="kpi">
+    <div class="item">
+      <div class="label">Pendientes</div>
+      <div class="val warn">8</div>
+    </div>
+    <div class="item">
+      <div class="label">Monto en revisión</div>
+      <div class="val">S/ 14,820</div>
+    </div>
+    <div class="item">
+      <div class="label">Aprobados hoy</div>
+      <div class="val ok">12</div>
+    </div>
+    <div class="item">
+      <div class="label">Rechazados hoy</div>
+      <div class="val danger">2</div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- LIST -->
+  <aside class="list-pane">
+
+    <div class="list-head">
+      <div class="search-input">
+        <i class="bi bi-search"></i>
+        <input class="form-control form-control-sm" placeholder="Cajero, motivo o referencia...">
+      </div>
+      <div class="filter-chips">
+        <span class="chip active">Todos <span class="chip-count">8</span></span>
+        <span class="chip">Cuotas <span class="chip-count">3</span></span>
+        <span class="chip">Caja <span class="chip-count">2</span></span>
+        <span class="chip">Cuadre <span class="chip-count">2</span></span>
+        <span class="chip">Desembolso <span class="chip-count">1</span></span>
+      </div>
+      <div class="filter-chips">
+        <span class="chip">Mismo día</span>
+        <span class="chip">Día anterior</span>
+        <span class="chip">+ 24h sin atender</span>
+      </div>
+    </div>
+
+    <div class="list-body">
+      <!-- Activo -->
+      <div class="extorno active">
+        <div class="ext-icon tipo-cuota"><i class="bi bi-cash-coin"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">PAGO DE CUOTA · EXT-2026-00328</div>
+          <div class="ext-asunto">Cuota #3 · ROJAS MENDOZA, Carlos A.</div>
+          <div class="ext-meta">Solicitado por Juan López · hace 18 min</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 1,067.92</span>
+            <span class="ext-tag urgente">Urgente</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-icon tipo-cuadre"><i class="bi bi-shield-exclamation"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">SOBRANTE DE CIERRE · EXT-2026-00327</div>
+          <div class="ext-asunto">Sobrante S/ 250 · cierre 22/abr</div>
+          <div class="ext-meta">Solicitado por María Quispe · hace 42 min</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 250.00</span>
+            <span class="ext-tag urgente">Urgente</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-icon tipo-caja"><i class="bi bi-arrow-down-circle"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">EGRESO DE CAJA · EXT-2026-00326</div>
+          <div class="ext-asunto">Viático mal monto S/ 80</div>
+          <div class="ext-meta">Solicitado por Juan López · hace 1h 12m</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 80.00</span>
+            <span class="ext-tag normal">Normal</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-icon tipo-cuota"><i class="bi bi-cash-coin"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">PAGO DE CUOTA · EXT-2026-00325</div>
+          <div class="ext-asunto">Cuotas 5,6 · QUISPE V., María L.</div>
+          <div class="ext-meta">Solicitado por Juan López · ayer 16:42</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 2,310.00</span>
+            <span class="ext-tag demora">+24h</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-icon tipo-desemb"><i class="bi bi-bank"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">DESEMBOLSO · EXT-2026-00324</div>
+          <div class="ext-asunto">Cliente se arrepintió · CR-2025-00921</div>
+          <div class="ext-meta">Solicitado por Juan López · ayer 17:08</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 8,500.00</span>
+            <span class="ext-tag demora">+24h</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-icon tipo-cuadre"><i class="bi bi-shield-exclamation"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">FALTANTE · EXT-2026-00323</div>
+          <div class="ext-asunto">Faltante S/ 120 cierre 21/abr</div>
+          <div class="ext-meta">Solicitado por Pedro Silva · 21/abr 18:30</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 120.00</span>
+            <span class="ext-tag demora">+48h</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-icon tipo-cuota"><i class="bi bi-cash-coin"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">PAGO DE CUOTA · EXT-2026-00322</div>
+          <div class="ext-asunto">Pago duplicado · MAMANI C., Rosa</div>
+          <div class="ext-meta">Solicitado por María Quispe · 21/abr 14:25</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 985.42</span>
+            <span class="ext-tag demora">+48h</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-icon tipo-caja"><i class="bi bi-arrow-up-circle"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">INGRESO DE CAJA · EXT-2026-00321</div>
+          <div class="ext-asunto">Ingreso socio mal concepto</div>
+          <div class="ext-meta">Solicitado por Pedro Silva · 21/abr 11:50</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 500.00</span>
+            <span class="ext-tag demora">+48h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="list-footer">
+      <span>8 pendientes · S/ 14,820 total</span>
+      <a href="#" style="color:var(--accent); text-decoration:none;">Ver histórico</a>
+    </div>
+  </aside>
+
+  <!-- WORKSPACE -->
+  <main class="workspace">
+
+    <!-- Cabecera del extorno -->
+    <div class="ws-head">
+      <div class="ws-icon" style="background: var(--accent);"><i class="bi bi-cash-coin"></i></div>
+      <div class="ws-info">
+        <h2>Extorno de Pago de Cuota · EXT-2026-00328</h2>
+        <div class="meta">
+          <i class="bi bi-receipt"></i> Recibo original: <strong>R-2026-04823</strong>
+          · <i class="bi bi-person"></i> Solicitado por <strong>Juan López</strong>
+          · <i class="bi bi-clock"></i> Hace 18 min
+          · <span class="pill-estado pill-pendiente">⏳ Pendiente de aprobación</span>
+        </div>
+      </div>
+      <div class="ws-actions">
+        <button class="qa-btn" title="Llamar al cajero solicitante">
+          <i class="bi bi-telephone-fill"></i> Llamar al cajero
+        </button>
+        <button class="qa-btn" title="Ver historial del expediente">
+          <i class="bi bi-clock-history"></i> Histórico
+        </button>
+      </div>
+    </div>
+
+    <!-- KPIs del extorno -->
+    <div class="kpi-row">
+      <div class="ckpi danger">
+        <div class="lbl">Monto a Extornar</div>
+        <div class="val">S/ 1,067.92</div>
+      </div>
+      <div class="ckpi">
+        <div class="lbl">Tipo</div>
+        <div class="val" style="font-size:.95rem; padding-top:.3rem;">Pago de cuota</div>
+      </div>
+      <div class="ckpi warn">
+        <div class="lbl">Urgencia</div>
+        <div class="val" style="font-size:.95rem; padding-top:.3rem;">Mismo día</div>
+      </div>
+      <div class="ckpi">
+        <div class="lbl">Aprobador requerido</div>
+        <div class="val" style="font-size:.95rem; padding-top:.3rem;">Supervisor</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active"><i class="bi bi-info-circle"></i> Detalle</div>
+      <div class="tab"><i class="bi bi-clock-history"></i> Trámite</div>
+      <div class="tab"><i class="bi bi-paperclip"></i> Evidencia</div>
+    </div>
+
+    <div class="tab-panel">
+
+      <!-- Motivo del solicitante -->
+      <div class="motivo-box">
+        <div class="lbl">📝 Motivo del solicitante</div>
+        <div class="text">
+          "El cliente realizó el pago por error. La transferencia que tenía como destino
+          la cuenta del Banco BCP fue rechazada por el banco emisor (cuenta cerrada).
+          Tengo el sustento bancario en el sistema. Solicito extorno para regularizar."
+        </div>
+        <div class="firma">
+          <i class="bi bi-person-fill"></i> Juan López · Cajero · Agencia Los Olivos · 23/04/2026 14:48
+        </div>
+      </div>
+
+      <!-- Comparación antes / después -->
+      <div class="compare-grid">
+        <div class="compare-card before">
+          <h4><i class="bi bi-arrow-left"></i> Estado Actual</h4>
+          <div class="compare-row"><span>Cuota #3</span><strong>PAGADO</strong></div>
+          <div class="compare-row"><span>Saldo capital</span><strong>S/ 12,840.00</strong></div>
+          <div class="compare-row"><span>Mora aplicada</span><strong>S/ 82.50</strong></div>
+          <div class="compare-row"><span>Cuotas vencidas</span><strong>1</strong></div>
+          <div class="compare-row"><span>Estado del préstamo</span><strong>VIGENTE</strong></div>
+        </div>
+        <div class="arrow"><i class="bi bi-arrow-right"></i></div>
+        <div class="compare-card after">
+          <h4><i class="bi bi-arrow-right"></i> Si Apruebas</h4>
+          <div class="compare-row"><span>Cuota #3</span><strong style="color:var(--danger);">VENCIDO (47 d)</strong></div>
+          <div class="compare-row"><span>Saldo capital</span><strong style="color:var(--danger);">S/ 13,825.42</strong></div>
+          <div class="compare-row"><span>Mora recalculada</span><strong style="color:var(--warn);">S/ 165.00</strong></div>
+          <div class="compare-row"><span>Cuotas vencidas</span><strong style="color:var(--danger);">2</strong></div>
+          <div class="compare-row"><span>Recibo</span><strong>R-2026-04823 · ANULADO</strong></div>
+        </div>
+      </div>
+
+      <!-- Detalle del recibo original -->
+      <h4 style="font-size:.85rem; font-weight:600; margin:.5rem 0;">
+        <i class="bi bi-receipt text-primary"></i> Recibo original (a anular)
+      </h4>
+      <div class="compare-card before" style="border-left-color:var(--danger);">
+        <div class="compare-row"><span>Recibo</span><strong>R-2026-04823</strong></div>
+        <div class="compare-row"><span>Fecha</span><strong>23/04/2026 14:30</strong></div>
+        <div class="compare-row"><span>Cliente</span><strong>ROJAS MENDOZA, Carlos · DNI 45821679</strong></div>
+        <div class="compare-row"><span>Tipo de pago</span><strong>Transferencia · BCP · OP-789456</strong></div>
+        <div class="compare-row"><span>Capital + Interés</span><strong>S/ 985.42</strong></div>
+        <div class="compare-row"><span>Mora</span><strong>S/ 82.50</strong></div>
+        <div class="compare-row" style="border-top:1px solid var(--border); margin-top:.35rem; padding-top:.45rem;">
+          <span><strong>Total</strong></span><strong>S/ 1,067.92</strong>
+        </div>
+      </div>
+
+      <!-- Decisión -->
+      <div class="decision-bar">
+        <h4><i class="bi bi-pencil-square"></i> Tu decisión</h4>
+        <textarea rows="3" placeholder="Comentario de tu decisión (obligatorio si rechazas, opcional si apruebas)..."></textarea>
+        <div class="decision-actions">
+          <button class="qa-btn">
+            <i class="bi bi-arrow-left"></i> Devolver para corregir
+          </button>
+          <button class="qa-btn danger">
+            <i class="bi bi-x-circle"></i> Rechazar
+          </button>
+          <button class="qa-btn success">
+            <i class="bi bi-check-circle-fill"></i> Aprobar y aplicar extorno
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<div class="watermark">Prototipo A — Bandeja de Aprobación · Supervisor</div>
+
+</body>
+</html>

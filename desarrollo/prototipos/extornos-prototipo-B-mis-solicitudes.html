@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo B — Mis Solicitudes · Extornos del Cajero</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root {
+    --brand: #0f172a;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --ok: #059669;
+    --ok-soft: #ecfdf5;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --orange: #f97316;
+    --orange-soft: #fed7aa;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --critical: #991b1b;
+    --purple: #7c3aed;
+    --purple-soft: #ede9fe;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --bg: #f1f5f9;
+    --border: #e2e8f0;
+  }
+  body { background: var(--bg); color: var(--ink); font-size: 13.5px; height: 100vh; overflow: hidden; }
+
+  /* Top bar */
+  .top {
+    background: var(--brand); color: #fff;
+    padding: .65rem 1.1rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .top h1 { font-size: 1rem; margin: 0; font-weight: 600; }
+  .top .sub { color: #94a3b8; font-size: .76rem; }
+  .kpi { display: flex; gap: 1.25rem; margin-left: auto; }
+  .kpi .item { text-align: right; }
+  .kpi .label { font-size: .68rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .val { font-size: 1rem; font-weight: 700; }
+  .kpi .val.warn { color: #fde047; }
+  .kpi .val.ok { color: #86efac; }
+  .kpi .val.danger { color: #fca5a5; }
+
+  /* Action bar (botón solicitar nuevo) */
+  .action-bar {
+    background: #fff; padding: .65rem 1.25rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .btn-solicitar {
+    background: var(--accent); color: #fff;
+    padding: .5rem .85rem; border: none; border-radius: 6px;
+    font-size: .85rem; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: .35rem;
+  }
+  .btn-solicitar:hover { background: #1d4ed8; }
+  .info-text { font-size: .78rem; color: var(--muted); }
+  .info-text i { color: var(--accent); margin-right: .25rem; }
+
+  /* Layout */
+  .layout {
+    display: grid; grid-template-columns: 380px 1fr;
+    height: calc(100vh - 53px - 47px);
+  }
+
+  /* List pane */
+  .list-pane {
+    background: #fff; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .list-head { padding: .75rem .85rem; border-bottom: 1px solid var(--border); }
+  .search-input { position: relative; }
+  .search-input i {
+    position: absolute; left: .65rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: .85rem;
+  }
+  .search-input input { padding-left: 2rem; font-size: .85rem; }
+
+  .filter-chips { display: flex; gap: .3rem; margin-top: .55rem; flex-wrap: wrap; }
+  .chip {
+    padding: .25rem .55rem; border-radius: 999px;
+    background: #f1f5f9; color: var(--muted);
+    font-size: .7rem; font-weight: 600; cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: .3rem;
+  }
+  .chip-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 16px; padding: 0 .3rem;
+    background: rgba(0,0,0,.08); border-radius: 999px;
+    font-size: .62rem; font-weight: 700;
+  }
+  .chip.active { background: var(--accent-soft); color: var(--accent); border-color: #bfdbfe; }
+  .chip.active .chip-count { background: var(--accent); color: #fff; }
+  .chip-warn.active { background: var(--warn-soft); color: var(--warn); border-color: #fde68a; }
+  .chip-warn.active .chip-count { background: var(--warn); }
+  .chip-ok.active { background: var(--ok-soft); color: var(--ok); border-color: #bbf7d0; }
+  .chip-ok.active .chip-count { background: var(--ok); }
+  .chip-danger.active { background: var(--danger-soft); color: var(--danger); border-color: #fca5a5; }
+  .chip-danger.active .chip-count { background: var(--danger); }
+
+  /* List items */
+  .list-body { flex: 1; overflow-y: auto; }
+  .extorno {
+    padding: .65rem .85rem; border-bottom: 1px solid #f1f5f9;
+    cursor: pointer; display: flex; gap: .65rem;
+    border-left: 3px solid transparent;
+  }
+  .extorno:hover { background: #f8fafc; }
+  .extorno.active {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    padding-left: calc(.85rem - 3px);
+  }
+  .ext-status-dot {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem; flex-shrink: 0;
+  }
+  .ext-status-dot.pendiente { background: var(--warn); }
+  .ext-status-dot.aprobado  { background: var(--ok); }
+  .ext-status-dot.rechazado { background: var(--danger); }
+  .ext-status-dot.aplicado  { background: var(--accent); }
+
+  .ext-body { flex: 1; min-width: 0; }
+  .ext-tipo {
+    font-size: .65rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600;
+  }
+  .ext-asunto {
+    font-weight: 600; font-size: .82rem; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ext-meta { font-size: .68rem; color: var(--muted); margin-top: .15rem; }
+  .ext-row {
+    display: flex; justify-content: space-between; align-items: center; margin-top: .25rem;
+  }
+  .ext-monto { font-weight: 700; font-size: .85rem; color: var(--ink); }
+  .estado-tag {
+    padding: .15rem .5rem; border-radius: 4px;
+    font-size: .62rem; font-weight: 700;
+  }
+  .estado-tag.pendiente { background: var(--warn-soft); color: #92400e; }
+  .estado-tag.aprobado  { background: var(--ok-soft); color: var(--ok); }
+  .estado-tag.rechazado { background: var(--danger-soft); color: var(--danger); }
+  .estado-tag.aplicado  { background: var(--accent-soft); color: var(--accent); }
+
+  .list-footer {
+    padding: .55rem .85rem; border-top: 1px solid var(--border);
+    background: #f8fafc; font-size: .72rem; color: var(--muted);
+  }
+
+  /* Workspace */
+  .workspace { background: var(--bg); overflow-y: auto; padding: 1rem; }
+
+  .ws-head {
+    background: #fff; border-radius: 10px; border: 1px solid var(--border);
+    padding: 1rem 1.1rem; margin-bottom: .9rem;
+    display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;
+  }
+  .ws-icon {
+    width: 56px; height: 56px; border-radius: 12px;
+    background: var(--warn); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .ws-info h2 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+  .ws-info .meta { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
+  .ws-info .meta i { margin-right: .15rem; }
+  .ws-actions { display: flex; gap: .35rem; margin-left: auto; flex-wrap: wrap; }
+
+  .qa-btn {
+    padding: .42rem .65rem; border: 1px solid var(--border);
+    background: #fff; border-radius: 6px;
+    font-size: .78rem; font-weight: 500; color: var(--ink);
+    display: inline-flex; align-items: center; gap: .35rem; cursor: pointer;
+  }
+  .qa-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .qa-btn.danger {
+    background: transparent; border-color: var(--danger); color: var(--danger);
+  }
+  .qa-btn.danger:hover { background: var(--danger); color: #fff; }
+
+  /* Pill estado grande */
+  .pill-estado-big {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .45rem .85rem; border-radius: 999px;
+    font-size: .82rem; font-weight: 600;
+  }
+  .pill-pendiente { background: var(--warn-soft); color: #92400e; }
+  .pill-aprobado  { background: var(--ok-soft); color: var(--ok); }
+  .pill-rechazado { background: var(--danger-soft); color: var(--danger); }
+  .pill-aplicado  { background: var(--accent-soft); color: var(--accent); }
+
+  /* Stepper horizontal del trámite */
+  .tramite-stepper {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.25rem; margin-bottom: .9rem;
+  }
+  .tramite-stepper h4 {
+    font-size: .68rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 700; margin: 0 0 .9rem;
+  }
+  .stepper {
+    display: flex; align-items: flex-start; overflow-x: auto;
+  }
+  .step {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1; position: relative; min-width: 110px;
+  }
+  .step::after {
+    content: ''; position: absolute; top: 14px; left: 60%; right: -40%;
+    height: 2px; background: var(--border);
+  }
+  .step:last-child::after { display: none; }
+  .step.done::after { background: var(--ok); }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #e2e8f0; color: var(--muted);
+    font-size: .82rem; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    z-index: 1; position: relative;
+  }
+  .step.done .step-num { background: var(--ok); color: #fff; }
+  .step.current .step-num {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .step.error .step-num { background: var(--danger); color: #fff; }
+  .step-label {
+    font-size: .75rem; color: var(--muted);
+    margin-top: .35rem; text-align: center; font-weight: 500;
+  }
+  .step.done .step-label, .step.current .step-label { color: var(--ink); font-weight: 600; }
+  .step-meta {
+    font-size: .65rem; color: var(--muted); margin-top: .15rem; text-align: center;
+  }
+
+  /* Detalle del extorno */
+  .panel {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: .9rem;
+  }
+  .panel-head {
+    padding: .65rem .85rem; border-bottom: 1px solid var(--border);
+    background: #fafbfc; font-size: .8rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+    display: flex; align-items: center; gap: .35rem;
+  }
+  .panel-body { padding: 1rem; }
+
+  .detail-row {
+    display: flex; justify-content: space-between; padding: .35rem 0;
+    font-size: .85rem; border-bottom: 1px solid #f1f5f9;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .lbl { color: var(--muted); }
+  .detail-row strong { font-weight: 600; }
+
+  /* Mi motivo */
+  .mi-motivo {
+    background: var(--warn-soft); border: 1px solid #fde68a; border-left: 3px solid var(--warn);
+    border-radius: 6px; padding: .85rem 1rem; margin-bottom: 1rem;
+  }
+  .mi-motivo .lbl {
+    font-size: .68rem; color: #92400e; text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 700; margin-bottom: .35rem;
+  }
+  .mi-motivo .text { font-size: .85rem; color: #78350f; line-height: 1.5; font-style: italic; }
+
+  /* Comentario del aprobador */
+  .aprobador-respuesta {
+    background: var(--ok-soft); border: 1px solid #bbf7d0; border-left: 3px solid var(--ok);
+    border-radius: 6px; padding: .85rem 1rem; margin-bottom: 1rem;
+  }
+  .aprobador-respuesta.rechazado {
+    background: var(--danger-soft); border-color: #fca5a5; border-left-color: var(--danger);
+  }
+  .aprobador-respuesta .lbl {
+    font-size: .68rem; text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 700; margin-bottom: .35rem;
+  }
+  .aprobador-respuesta .text { font-size: .85rem; line-height: 1.5; }
+  .aprobador-respuesta .firma {
+    margin-top: .5rem; padding-top: .5rem; border-top: 1px solid currentColor;
+    font-size: .72rem; opacity: .8;
+  }
+
+  /* Tip de espera */
+  .waiting-tip {
+    background: var(--accent-soft); border: 1px solid #bfdbfe;
+    border-radius: 6px; padding: .65rem .85rem;
+    font-size: .78rem; color: #1e3a8a; line-height: 1.5;
+    display: flex; align-items: center; gap: .5rem; margin-bottom: .9rem;
+  }
+  .waiting-tip i { font-size: 1.1rem; flex-shrink: 0; }
+
+  .watermark {
+    position: fixed; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,.6); color: #fff; padding: .25rem .6rem;
+    font-size: .7rem; border-radius: 4px; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="top">
+  <i class="bi bi-arrow-counterclockwise text-warning fs-5"></i>
+  <div>
+    <h1>Mis Solicitudes de Extorno</h1>
+    <div class="sub">Juan López · Cajero · Agencia Los Olivos · 23/abr/2026</div>
+  </div>
+  <div class="kpi">
+    <div class="item">
+      <div class="label">Pendientes</div>
+      <div class="val warn">3</div>
+    </div>
+    <div class="item">
+      <div class="label">Aprobadas (mes)</div>
+      <div class="val ok">14</div>
+    </div>
+    <div class="item">
+      <div class="label">Rechazadas (mes)</div>
+      <div class="val danger">1</div>
+    </div>
+    <div class="item">
+      <div class="label">Tasa de aprobación</div>
+      <div class="val ok">93%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Action bar -->
+<div class="action-bar">
+  <button class="btn-solicitar">
+    <i class="bi bi-plus-circle-fill"></i> Solicitar nuevo extorno
+  </button>
+  <span class="info-text">
+    <i class="bi bi-info-circle"></i>
+    Todo extorno requiere aprobación del supervisor o gerente — sin excepciones.
+  </span>
+</div>
+
+<div class="layout">
+
+  <!-- LIST -->
+  <aside class="list-pane">
+
+    <div class="list-head">
+      <div class="search-input">
+        <i class="bi bi-search"></i>
+        <input class="form-control form-control-sm" placeholder="Por tipo, recibo o cliente...">
+      </div>
+      <div class="filter-chips">
+        <span class="chip active">Todas <span class="chip-count">18</span></span>
+        <span class="chip chip-warn">Pendientes <span class="chip-count">3</span></span>
+        <span class="chip chip-ok">Aprobadas <span class="chip-count">14</span></span>
+        <span class="chip chip-danger">Rechazadas <span class="chip-count">1</span></span>
+      </div>
+      <div class="filter-chips">
+        <span class="chip">Esta semana</span>
+        <span class="chip">Este mes</span>
+        <span class="chip">Cuotas</span>
+        <span class="chip">Caja</span>
+        <span class="chip">Cuadre</span>
+      </div>
+    </div>
+
+    <div class="list-body">
+
+      <!-- Activo: PENDIENTE -->
+      <div class="extorno active">
+        <div class="ext-status-dot pendiente"><i class="bi bi-hourglass-split"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">PAGO DE CUOTA · EXT-2026-00328</div>
+          <div class="ext-asunto">Cuota #3 · ROJAS MENDOZA, Carlos A.</div>
+          <div class="ext-meta">Solicitado hoy 14:48</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 1,067.92</span>
+            <span class="estado-tag pendiente">⏳ Esperando supervisor</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-status-dot pendiente"><i class="bi bi-hourglass-split"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">EGRESO DE CAJA · EXT-2026-00326</div>
+          <div class="ext-asunto">Viático mal monto S/ 80</div>
+          <div class="ext-meta">Solicitado hoy 13:36</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 80.00</span>
+            <span class="estado-tag pendiente">⏳ Esperando</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-status-dot pendiente"><i class="bi bi-hourglass-split"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">PAGO DE CUOTA · EXT-2026-00325</div>
+          <div class="ext-asunto">Cuotas 5,6 · QUISPE V., María L.</div>
+          <div class="ext-meta">Solicitado ayer 16:42</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 2,310.00</span>
+            <span class="estado-tag pendiente">⏳ Esperando</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- APROBADO -->
+      <div class="extorno">
+        <div class="ext-status-dot aplicado"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">DESEMBOLSO · EXT-2026-00318</div>
+          <div class="ext-asunto">Cliente arrepentido · CR-2025-00834</div>
+          <div class="ext-meta">Aplicado hoy 11:20</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 8,500.00</span>
+            <span class="estado-tag aplicado">✓ Aplicado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-status-dot aplicado"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">PAGO DE CUOTA · EXT-2026-00315</div>
+          <div class="ext-asunto">Pago duplicado · MAMANI C., Rosa</div>
+          <div class="ext-meta">Aplicado ayer 18:30</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 985.42</span>
+            <span class="estado-tag aplicado">✓ Aplicado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-status-dot aplicado"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">INGRESO DE CAJA · EXT-2026-00310</div>
+          <div class="ext-asunto">Concepto mal seleccionado</div>
+          <div class="ext-meta">Aplicado 21/abr 09:15</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 500.00</span>
+            <span class="estado-tag aplicado">✓ Aplicado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECHAZADO -->
+      <div class="extorno">
+        <div class="ext-status-dot rechazado"><i class="bi bi-x-circle-fill"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">PAGO DE CUOTA · EXT-2026-00305</div>
+          <div class="ext-asunto">Cuota #2 · CRUZ R., Diego</div>
+          <div class="ext-meta">Rechazado 19/abr 15:40</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 920.00</span>
+            <span class="estado-tag rechazado">✗ Rechazado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="extorno">
+        <div class="ext-status-dot aplicado"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="ext-body">
+          <div class="ext-tipo">SOBRANTE · EXT-2026-00298</div>
+          <div class="ext-asunto">Sobrante S/ 80 cierre 18/abr</div>
+          <div class="ext-meta">Aplicado 18/abr 19:05</div>
+          <div class="ext-row">
+            <span class="ext-monto">S/ 80.00</span>
+            <span class="estado-tag aplicado">✓ Aplicado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="list-footer">
+      Mostrando 8 de 18 · <a href="#" style="color:var(--accent); text-decoration:none;">Ver todas</a>
+    </div>
+  </aside>
+
+  <!-- WORKSPACE -->
+  <main class="workspace">
+
+    <!-- Cabecera -->
+    <div class="ws-head">
+      <div class="ws-icon"><i class="bi bi-cash-coin"></i></div>
+      <div class="ws-info">
+        <h2>Extorno de Pago de Cuota · EXT-2026-00328</h2>
+        <div class="meta">
+          <i class="bi bi-receipt"></i> Recibo: <strong>R-2026-04823</strong>
+          · <i class="bi bi-cash-coin"></i> Monto: <strong>S/ 1,067.92</strong>
+          · <i class="bi bi-clock"></i> Solicitado hoy 14:48
+        </div>
+      </div>
+      <div class="ws-actions">
+        <span class="pill-estado-big pill-pendiente">
+          <i class="bi bi-hourglass-split"></i> Esperando aprobación del supervisor
+        </span>
+        <button class="qa-btn danger">
+          <i class="bi bi-x-lg"></i> Cancelar solicitud
+        </button>
+      </div>
+    </div>
+
+    <!-- Tip espera -->
+    <div class="waiting-tip">
+      <i class="bi bi-info-circle-fill"></i>
+      <span>
+        Tu solicitud está en cola del <strong>SUPERVISOR_CREDITO de Los Olivos</strong>.
+        SLA estimado: 30 minutos. Mientras esperas no puedes registrar más operaciones
+        sobre el recibo R-2026-04823 (queda bloqueado).
+      </span>
+    </div>
+
+    <!-- Stepper del trámite -->
+    <div class="tramite-stepper">
+      <h4><i class="bi bi-diagram-3"></i> Estado del trámite</h4>
+      <div class="stepper">
+        <div class="step done">
+          <div class="step-num">1</div>
+          <div class="step-label">Solicitado</div>
+          <div class="step-meta">14:48 · Tú</div>
+        </div>
+        <div class="step current">
+          <div class="step-num">2</div>
+          <div class="step-label">En revisión</div>
+          <div class="step-meta">Supervisor</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-label">Aprobado</div>
+          <div class="step-meta">—</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-label">Aplicado</div>
+          <div class="step-meta">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mi motivo -->
+    <div class="mi-motivo">
+      <div class="lbl">📝 Motivo que ingresaste</div>
+      <div class="text">
+        "El cliente realizó el pago por error. La transferencia que tenía como destino
+        la cuenta del Banco BCP fue rechazada por el banco emisor (cuenta cerrada).
+        Tengo el sustento bancario en el sistema. Solicito extorno para regularizar."
+      </div>
+    </div>
+
+    <!-- Detalle de la operación a extornar -->
+    <div class="panel">
+      <div class="panel-head">
+        <i class="bi bi-receipt text-primary"></i> Operación que se va a extornar
+      </div>
+      <div class="panel-body">
+        <div class="detail-row">
+          <span class="lbl">Recibo</span>
+          <strong>R-2026-04823</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Fecha del pago</span>
+          <strong>23/04/2026 · 14:30</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Cliente</span>
+          <strong>ROJAS MENDOZA, Carlos · DNI 45821679</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Préstamo</span>
+          <strong>CR-2025-00834 · Consumo Personal</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Cuota</span>
+          <strong>#3 (vencimiento 15/12/2025)</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Tipo de pago</span>
+          <strong>Transferencia · BCP · OP-789456</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Capital + Interés</span>
+          <strong>S/ 985.42</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Mora</span>
+          <strong>S/ 82.50</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Total cobrado</span>
+          <strong style="color:var(--accent); font-size:1rem;">S/ 1,067.92</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Impacto previsto si se aprueba -->
+    <div class="panel">
+      <div class="panel-head">
+        <i class="bi bi-arrow-counterclockwise text-warning"></i> Impacto si se aprueba
+      </div>
+      <div class="panel-body">
+        <div class="detail-row">
+          <span class="lbl">Estado de la cuota #3</span>
+          <strong style="color:var(--danger);">Pasa a VENCIDO (47 días)</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Saldo capital</span>
+          <strong>+ S/ 985.42 → S/ 13,825.42</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Mora recalculada</span>
+          <strong style="color:var(--warn);">S/ 165.00</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Recibo R-2026-04823</span>
+          <strong>Marcado como ANULADO</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Caja</span>
+          <strong style="color:var(--ok);">+ S/ 1,067.92 (devuelve al saldo)</strong>
+        </div>
+        <div class="detail-row">
+          <span class="lbl">Recibo de extorno</span>
+          <strong>REC-EXT-XXXX (se generará al aplicar)</strong>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<div class="watermark">Prototipo B — Mis Solicitudes · Cajero</div>
+
+</body>
+</html>

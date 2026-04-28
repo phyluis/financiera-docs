@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo B — Triage Dashboard · Cobranza</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root {
+    --brand: #0f172a;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --ok: #059669;
+    --ok-soft: #ecfdf5;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --critical: #991b1b;
+    --critical-soft: #fecaca;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --bg: #f1f5f9;
+    --border: #e2e8f0;
+  }
+  body { background: var(--bg); color: var(--ink); font-size: 13.5px; }
+
+  /* Page head */
+  .page-head {
+    background: #fff;
+    padding: .9rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .page-head h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+  .page-head .sub { font-size: .78rem; color: var(--muted); }
+  .page-head .actions { margin-left: auto; display: flex; gap: .4rem; }
+
+  /* KPI strip */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  @media (max-width: 1100px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    padding: 1rem 1.25rem;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .kpi:last-child { border-right: none; }
+  .kpi .lbl {
+    font-size: .68rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600;
+  }
+  .kpi .val { font-size: 1.6rem; font-weight: 700; color: var(--ink); line-height: 1.15; margin-top: .2rem; }
+  .kpi .hint { font-size: .72rem; color: var(--muted); margin-top: .25rem; }
+  .kpi.danger .val { color: var(--danger); }
+  .kpi.warn .val { color: var(--warn); }
+  .kpi.ok .val { color: var(--ok); }
+  .trend {
+    font-size: .7rem; font-weight: 600;
+    padding: .1rem .35rem; border-radius: 4px;
+  }
+  .trend-up { background: var(--danger-soft); color: var(--danger); }
+  .trend-down { background: var(--ok-soft); color: var(--ok); }
+
+  /* Main content padding */
+  .main { padding: 1rem 1.25rem; }
+
+  /* Buckets Kanban */
+  .buckets {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .85rem;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 1100px) { .buckets { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px)  { .buckets { grid-template-columns: 1fr; } }
+
+  .bucket {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .bucket-head {
+    padding: .75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: #fafbfc;
+  }
+  .bucket-head .top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: .35rem;
+  }
+  .bucket-head .lbl {
+    font-weight: 600; font-size: .82rem;
+    display: inline-flex; align-items: center; gap: .35rem;
+  }
+  .bucket-head .lbl .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .bucket-head .count {
+    font-size: 1.5rem; font-weight: 700; line-height: 1;
+  }
+  .bucket-head .total {
+    font-size: .78rem; color: var(--muted); margin-top: .15rem;
+  }
+
+  .b-30 .dot { background: var(--warn); }
+  .b-60 .dot { background: #f97316; }
+  .b-90 .dot { background: var(--danger); }
+  .b-90plus .dot { background: var(--critical); }
+
+  .b-30 .count { color: var(--warn); }
+  .b-60 .count { color: #c2410c; }
+  .b-90 .count { color: var(--danger); }
+  .b-90plus .count { color: var(--critical); }
+
+  .bucket-body {
+    flex: 1;
+    padding: .5rem;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .b-item {
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: .55rem .7rem;
+    margin-bottom: .4rem;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  .b-item:hover { background: #f1f5f9; border-left-color: var(--accent); }
+  .b-item .top { display: flex; justify-content: space-between; align-items: baseline; }
+  .b-item .name {
+    font-weight: 600; font-size: .78rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 70%;
+  }
+  .b-item .deuda { font-weight: 700; font-size: .8rem; color: var(--danger); }
+  .b-item .meta { font-size: .68rem; color: var(--muted); margin-top: .15rem; }
+
+  .bucket-foot {
+    padding: .5rem .85rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: .75rem;
+  }
+  .bucket-foot a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+  /* Bandeja de hoy */
+  .today {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .today h3 {
+    font-size: .95rem; font-weight: 600; margin: 0 0 .5rem;
+    display: flex; align-items: center; gap: .4rem;
+  }
+  .today h3 .badge-today {
+    background: var(--accent); color: #fff; font-size: .7rem; padding: .15rem .5rem; border-radius: 999px;
+    margin-left: auto;
+  }
+
+  .today-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: .85rem;
+  }
+  @media (max-width: 900px) { .today-grid { grid-template-columns: 1fr; } }
+
+  .today-col {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .75rem;
+  }
+  .today-col h4 {
+    font-size: .75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--muted); margin: 0 0 .55rem;
+    display: flex; align-items: center; gap: .35rem;
+  }
+  .today-col h4 i { color: var(--accent); }
+  .today-col.warn h4 i { color: var(--warn); }
+  .today-col.danger h4 i { color: var(--danger); }
+
+  .today-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .45rem .55rem; border-radius: 4px; cursor: pointer;
+    font-size: .8rem;
+  }
+  .today-row:hover { background: var(--accent-soft); }
+  .today-row .name { font-weight: 600; flex: 1; }
+  .today-row .meta { font-size: .68rem; color: var(--muted); }
+  .today-row .val { font-weight: 700; font-size: .78rem; }
+  .today-row .val.danger { color: var(--danger); }
+  .today-row .val.warn { color: var(--warn); }
+
+  /* Tabla cartera completa */
+  .cartera-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .cartera-head {
+    padding: .85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .cartera-head h3 { margin: 0; font-size: .95rem; font-weight: 600; flex: 1; }
+
+  .search-input {
+    position: relative; flex: 1; max-width: 320px;
+  }
+  .search-input i {
+    position: absolute; left: .65rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: .85rem;
+  }
+  .search-input input { padding-left: 2rem; font-size: .85rem; }
+
+  .cartera-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .cartera-table th {
+    background: #f8fafc;
+    padding: .55rem .85rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-size: .68rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .cartera-table td {
+    padding: .65rem .85rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .cartera-table tr:hover { background: #f8fafc; cursor: pointer; }
+  .cartera-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cartera-table td.center { text-align: center; }
+
+  .mora-tag {
+    padding: .15rem .55rem; border-radius: 4px; font-size: .7rem; font-weight: 700;
+  }
+  .mora-tag.b-30  { background: var(--warn-soft); color: var(--warn); }
+  .mora-tag.b-60  { background: #fed7aa; color: #c2410c; }
+  .mora-tag.b-90  { background: var(--danger-soft); color: var(--danger); }
+  .mora-tag.b-90plus { background: var(--critical); color: #fff; }
+
+  .btn-action {
+    background: transparent; border: 1px solid var(--border); color: var(--ink);
+    padding: .25rem .5rem; border-radius: 4px; cursor: pointer; font-size: .75rem;
+  }
+  .btn-action:hover { border-color: var(--accent); color: var(--accent); }
+
+  .watermark {
+    position: fixed; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,.6); color: #fff; padding: .25rem .6rem;
+    font-size: .7rem; border-radius: 4px; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- Page head -->
+<div class="page-head">
+  <i class="bi bi-exclamation-octagon-fill text-danger fs-4"></i>
+  <div>
+    <h1>Cobranza · Triage Dashboard</h1>
+    <div class="sub">Visión ejecutiva · 23 de abril, 2026</div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i> Exportar</button>
+    <button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> Filtros</button>
+  </div>
+</div>
+
+<!-- KPI strip -->
+<div class="kpi-strip">
+  <div class="kpi danger">
+    <div class="lbl">Cartera Vencida Total</div>
+    <div class="val">S/ 248,450</div>
+    <div class="hint"><span class="trend trend-up">↑ 4.2%</span> vs ayer</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Clientes en Mora</div>
+    <div class="val">47</div>
+    <div class="hint">de 312 activos · <strong>15.1%</strong></div>
+  </div>
+  <div class="kpi ok">
+    <div class="lbl">Cobrado Hoy</div>
+    <div class="val">S/ 8,420</div>
+    <div class="hint"><span class="trend trend-down">↓ 18%</span> vs promedio</div>
+  </div>
+  <div class="kpi warn">
+    <div class="lbl">Promesas Vencen Hoy</div>
+    <div class="val">3</div>
+    <div class="hint">S/ 4,850 comprometidos</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Mora Promedio</div>
+    <div class="val">52 <span style="font-size:.85rem; font-weight:500; color:var(--muted);">días</span></div>
+    <div class="hint"><span class="trend trend-up">↑ 3 d</span> vs mes pasado</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Bandeja de hoy -->
+  <div class="today">
+    <h3>
+      <i class="bi bi-calendar-event text-primary"></i> Bandeja de hoy
+      <span class="badge-today">9 acciones requeridas</span>
+    </h3>
+    <div class="today-grid">
+
+      <div class="today-col">
+        <h4><i class="bi bi-calendar-check"></i> Promesas que vencen hoy</h4>
+        <div class="today-row">
+          <div>
+            <div class="name">QUISPE VARGAS, María L.</div>
+            <div class="meta">Promesa de pago: 23/04</div>
+          </div>
+          <span class="val danger">S/ 2,400</span>
+        </div>
+        <div class="today-row">
+          <div>
+            <div class="name">CONDORI TICONA, Pablo</div>
+            <div class="meta">Promesa de pago: 23/04</div>
+          </div>
+          <span class="val danger">S/ 1,800</span>
+        </div>
+        <div class="today-row">
+          <div>
+            <div class="name">CRUZ RAMÍREZ, Diego</div>
+            <div class="meta">Promesa de pago: 23/04</div>
+          </div>
+          <span class="val danger">S/ 650</span>
+        </div>
+      </div>
+
+      <div class="today-col warn">
+        <h4><i class="bi bi-clock-history"></i> Sin contacto +7 días</h4>
+        <div class="today-row">
+          <div>
+            <div class="name">FLORES HUAMÁN, Ana</div>
+            <div class="meta">Último contacto: 12/abr · llamada</div>
+          </div>
+          <span class="val warn">11 d</span>
+        </div>
+        <div class="today-row">
+          <div>
+            <div class="name">MAMANI CHURA, Rosa</div>
+            <div class="meta">Último contacto: 14/abr · WhatsApp</div>
+          </div>
+          <span class="val warn">9 d</span>
+        </div>
+        <div class="today-row">
+          <div>
+            <div class="name">HUARANCCA MEZA, Ester</div>
+            <div class="meta">Último contacto: 15/abr · visita</div>
+          </div>
+          <span class="val warn">8 d</span>
+        </div>
+      </div>
+
+      <div class="today-col">
+        <h4><i class="bi bi-bell"></i> Próximos a entrar en mora (mañana)</h4>
+        <div class="today-row">
+          <div>
+            <div class="name">RAMOS YUPANQUI, Sara</div>
+            <div class="meta">Cuota #5 vence 24/04</div>
+          </div>
+          <span class="val">S/ 1,250</span>
+        </div>
+        <div class="today-row">
+          <div>
+            <div class="name">CHÁVEZ SOTO, Manuel</div>
+            <div class="meta">Cuota #3 vence 24/04</div>
+          </div>
+          <span class="val">S/ 890</span>
+        </div>
+        <div class="today-row">
+          <div>
+            <div class="name">PAREDES ZAPATA, Lucía</div>
+            <div class="meta">Cuota #8 vence 24/04</div>
+          </div>
+          <span class="val">S/ 1,420</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Buckets de mora -->
+  <div class="buckets">
+
+    <div class="bucket b-30">
+      <div class="bucket-head">
+        <div class="top">
+          <span class="lbl"><span class="dot"></span> 1 — 30 días</span>
+          <span class="count">12</span>
+        </div>
+        <div class="total">S/ 38,420 · <span style="color:var(--ok);">15.5%</span> de la cartera</div>
+      </div>
+      <div class="bucket-body">
+        <div class="b-item">
+          <div class="top">
+            <span class="name">SALAZAR PEREYRA, Juan</span>
+            <span class="deuda">S/ 2,150</span>
+          </div>
+          <div class="meta">22 días · Sin contacto</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">VARGAS PALOMINO, Luis</span>
+            <span class="deuda">S/ 3,450</span>
+          </div>
+          <div class="meta">15 días · Promesa pendiente</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">RAMOS DELGADO, Carmen</span>
+            <span class="deuda">S/ 1,890</span>
+          </div>
+          <div class="meta">8 días · Contactada</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">TORRES VILCA, Miguel</span>
+            <span class="deuda">S/ 4,210</span>
+          </div>
+          <div class="meta">26 días · Sin contacto</div>
+        </div>
+      </div>
+      <div class="bucket-foot">
+        <a href="#">Ver los 12 →</a>
+      </div>
+    </div>
+
+    <div class="bucket b-60">
+      <div class="bucket-head">
+        <div class="top">
+          <span class="lbl"><span class="dot"></span> 31 — 60 días</span>
+          <span class="count">18</span>
+        </div>
+        <div class="total">S/ 78,650 · <span style="color:var(--warn);">31.7%</span> de la cartera</div>
+      </div>
+      <div class="bucket-body">
+        <div class="b-item">
+          <div class="top">
+            <span class="name">ROJAS MENDOZA, Carlos A.</span>
+            <span class="deuda">S/ 4,820</span>
+          </div>
+          <div class="meta">47 días · Promesa hoy</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">MAMANI CHURA, Rosa</span>
+            <span class="deuda">S/ 7,890</span>
+          </div>
+          <div class="meta">52 días · Sin contacto 9d</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">CRUZ RAMÍREZ, Diego</span>
+            <span class="deuda">S/ 5,670</span>
+          </div>
+          <div class="meta">38 días · WhatsApp 14/04</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">HUARANCCA MEZA, Ester</span>
+            <span class="deuda">S/ 6,120</span>
+          </div>
+          <div class="meta">44 días · Visita 15/04</div>
+        </div>
+      </div>
+      <div class="bucket-foot">
+        <a href="#">Ver los 18 →</a>
+      </div>
+    </div>
+
+    <div class="bucket b-90">
+      <div class="bucket-head">
+        <div class="top">
+          <span class="lbl"><span class="dot"></span> 61 — 90 días</span>
+          <span class="count">9</span>
+        </div>
+        <div class="total">S/ 56,890 · <span style="color:var(--danger);">22.9%</span> de la cartera</div>
+      </div>
+      <div class="bucket-body">
+        <div class="b-item">
+          <div class="top">
+            <span class="name">CONDORI TICONA, Pablo</span>
+            <span class="deuda">S/ 9,560</span>
+          </div>
+          <div class="meta">87 días · Promesa hoy</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">CASTILLO AROCA, Pedro</span>
+            <span class="deuda">S/ 8,450</span>
+          </div>
+          <div class="meta">76 días · Sin contacto 5d</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">YANARICO PUMA, Sandra</span>
+            <span class="deuda">S/ 6,720</span>
+          </div>
+          <div class="meta">68 días · Llamada 18/04</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">FERNÁNDEZ DÍAZ, Roberto</span>
+            <span class="deuda">S/ 11,200</span>
+          </div>
+          <div class="meta">82 días · Sin contacto 12d</div>
+        </div>
+      </div>
+      <div class="bucket-foot">
+        <a href="#">Ver los 9 →</a>
+      </div>
+    </div>
+
+    <div class="bucket b-90plus">
+      <div class="bucket-head">
+        <div class="top">
+          <span class="lbl"><span class="dot"></span> 90+ días · CRÍTICO</span>
+          <span class="count">8</span>
+        </div>
+        <div class="total">S/ 74,490 · <span style="color:var(--critical); font-weight:700;">29.9%</span> de la cartera</div>
+      </div>
+      <div class="bucket-body">
+        <div class="b-item">
+          <div class="top">
+            <span class="name">FLORES HUAMÁN, Ana</span>
+            <span class="deuda">S/ 18,200</span>
+          </div>
+          <div class="meta">156 días · Sin contacto 11d</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">QUISPE VARGAS, María L.</span>
+            <span class="deuda">S/ 12,340</span>
+          </div>
+          <div class="meta">128 días · Promesa hoy</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">ESPINOZA REYES, Hugo</span>
+            <span class="deuda">S/ 14,580</span>
+          </div>
+          <div class="meta">142 días · Notif. legal 10/04</div>
+        </div>
+        <div class="b-item">
+          <div class="top">
+            <span class="name">MELÉNDEZ TORRES, Patricia</span>
+            <span class="deuda">S/ 10,900</span>
+          </div>
+          <div class="meta">118 días · Sin contacto 8d</div>
+        </div>
+      </div>
+      <div class="bucket-foot">
+        <a href="#">Ver los 8 →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla cartera completa -->
+  <div class="cartera-card">
+    <div class="cartera-head">
+      <h3>Cartera completa</h3>
+      <div class="search-input">
+        <i class="bi bi-search"></i>
+        <input class="form-control form-control-sm" placeholder="DNI, nombre o contrato...">
+      </div>
+      <select class="form-select form-select-sm" style="max-width:180px;">
+        <option>Ordenar por monto ↓</option>
+        <option>Días de mora ↓</option>
+        <option>Última gestión</option>
+      </select>
+    </div>
+    <table class="cartera-table">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Contrato</th>
+          <th>Saldo Capital</th>
+          <th class="center">Cuotas Venc.</th>
+          <th class="center">Mora</th>
+          <th>Total Deuda</th>
+          <th>Última Gestión</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>FLORES HUAMÁN, Ana</strong><br><span style="color:var(--muted); font-size:.7rem;">DNI 46739281</span></td>
+          <td>CR-2024-00945</td>
+          <td class="num">S/ 24,800</td>
+          <td class="center"><span class="mora-tag b-90plus">5</span></td>
+          <td class="center"><span class="mora-tag b-90plus">156 d</span></td>
+          <td class="num text-danger fw-bold">S/ 18,200</td>
+          <td><span style="color:var(--muted); font-size:.74rem;">Llamada 12/04</span></td>
+          <td><button class="btn-action"><i class="bi bi-eye"></i></button></td>
+        </tr>
+        <tr>
+          <td><strong>QUISPE VARGAS, María L.</strong><br><span style="color:var(--muted); font-size:.7rem;">DNI 41203945</span></td>
+          <td>CR-2024-01298</td>
+          <td class="num">S/ 16,500</td>
+          <td class="center"><span class="mora-tag b-90plus">4</span></td>
+          <td class="center"><span class="mora-tag b-90plus">128 d</span></td>
+          <td class="num text-danger fw-bold">S/ 12,340</td>
+          <td><span style="color:var(--accent); font-size:.74rem;"><i class="bi bi-calendar-check"></i> Promesa hoy</span></td>
+          <td><button class="btn-action"><i class="bi bi-eye"></i></button></td>
+        </tr>
+        <tr>
+          <td><strong>CONDORI TICONA, Pablo</strong><br><span style="color:var(--muted); font-size:.7rem;">DNI 42398710</span></td>
+          <td>CR-2024-01087</td>
+          <td class="num">S/ 12,840</td>
+          <td class="center"><span class="mora-tag b-90">3</span></td>
+          <td class="center"><span class="mora-tag b-90">87 d</span></td>
+          <td class="num text-danger fw-bold">S/ 9,560</td>
+          <td><span style="color:var(--accent); font-size:.74rem;"><i class="bi bi-calendar-check"></i> Promesa hoy</span></td>
+          <td><button class="btn-action"><i class="bi bi-eye"></i></button></td>
+        </tr>
+        <tr>
+          <td><strong>MAMANI CHURA, Rosa</strong><br><span style="color:var(--muted); font-size:.7rem;">DNI 47281930</span></td>
+          <td>CR-2025-00712</td>
+          <td class="num">S/ 10,200</td>
+          <td class="center"><span class="mora-tag b-60">3</span></td>
+          <td class="center"><span class="mora-tag b-60">52 d</span></td>
+          <td class="num text-danger fw-bold">S/ 7,890</td>
+          <td><span style="color:var(--muted); font-size:.74rem;">WhatsApp 14/04</span></td>
+          <td><button class="btn-action"><i class="bi bi-eye"></i></button></td>
+        </tr>
+        <tr>
+          <td><strong>ROJAS MENDOZA, Carlos A.</strong><br><span style="color:var(--muted); font-size:.7rem;">DNI 45821679</span></td>
+          <td>CR-2025-00834</td>
+          <td class="num">S/ 12,840</td>
+          <td class="center"><span class="mora-tag b-60">2</span></td>
+          <td class="center"><span class="mora-tag b-60">47 d</span></td>
+          <td class="num text-danger fw-bold">S/ 4,820</td>
+          <td><span style="color:var(--muted); font-size:.74rem;">Visita 18/04</span></td>
+          <td><button class="btn-action"><i class="bi bi-eye"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="watermark">Prototipo B — Triage Dashboard</div>
+
+</body>
+</html>

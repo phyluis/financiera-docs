@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Prototipo — Evaluación con Borrador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    body { background:#f5f7fb; font-family: system-ui, -apple-system, sans-serif; }
+    .section-num {
+      width:28px; height:28px; font-size:0.85rem; font-weight:600;
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:50%; background:#0d6efd; color:#fff;
+    }
+    .locked-overlay {
+      position:absolute; inset:0; background:rgba(248,249,250,0.92);
+      display:flex; align-items:center; justify-content:center;
+      border-radius:0.375rem; z-index:10; text-align:center; padding:2rem;
+      transition: opacity 0.3s ease;
+    }
+    .locked-overlay.hidden { opacity:0; pointer-events:none; }
+    .section-container { position:relative; transition: all 0.3s ease; }
+    .toast-container { z-index:1080; }
+    .variant-btn.active { background:#0d6efd; color:#fff; border-color:#0d6efd; }
+    .variant-box { border:2px dashed #cbd5e1; padding:1rem; border-radius:0.5rem; background:#fff; margin-bottom:1.5rem; }
+    .variant-box.active { border-color:#0d6efd; background:#eff6ff; }
+    .state-badge { font-size:0.82rem; }
+    .pulse { animation: pulse 1.5s ease-in-out 2; }
+    @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(13,110,253,0.4); } 50% { box-shadow:0 0 0 10px rgba(13,110,253,0); } }
+    .fake-field { background:#f8f9fa; padding:0.5rem 0.75rem; border:1px solid #dee2e6; border-radius:0.375rem; font-size:0.9rem; color:#495057; }
+    .small-muted { font-size:0.78rem; color:#64748b; }
+  </style>
+</head>
+<body>
+
+<div class="container py-4" style="max-width:1100px;">
+
+  <!-- Encabezado del prototipo -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Prototipo UX — Evaluación con Borrador</h3>
+      <p class="text-muted mb-0 small">Compare el flujo actual vs. la propuesta con estado BORRADOR + dos botones</p>
+    </div>
+    <div class="btn-group" role="group" aria-label="Variante">
+      <button class="btn btn-outline-primary variant-btn" data-variant="antes">Antes (actual)</button>
+      <button class="btn btn-outline-primary variant-btn active" data-variant="despues">Después (propuesta)</button>
+    </div>
+  </div>
+
+  <!-- Banner informativo -->
+  <div id="info-banner" class="variant-box active">
+    <div class="d-flex align-items-start gap-2">
+      <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+      <div>
+        <strong id="info-title">Propuesta: Borrador + dos botones</strong>
+        <div id="info-desc" class="small text-muted">
+          El analista guarda un borrador con lo mínimo (cliente + condiciones), los bloques de Garantes y Bienes se
+          desbloquean automáticamente, y al terminar envía el expediente a revisión con un solo click.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TARJETA PRINCIPAL ═══════════════ -->
+  <div class="card shadow-sm border-0 mb-3">
+
+    <!-- Header -->
+    <div class="card-header bg-light py-3 d-flex align-items-center justify-content-between">
+      <div>
+        <h5 class="mb-0 text-dark">
+          <i class="bi bi-calculator-fill me-2 text-primary"></i>
+          <span id="titulo-form">Nueva Evaluación de Crédito</span>
+        </h5>
+        <small class="text-muted">
+          <i class="bi bi-person me-1"></i>Ana Ramírez (Analista)
+          &nbsp;·&nbsp;<i class="bi bi-building me-1"></i>Agencia Centro
+        </small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span id="badge-expediente" class="badge bg-primary fs-6 px-3 py-2" style="display:none;">
+          <i class="bi bi-hash me-1"></i><span id="codigo-exp">EXP-2026-00123</span>
+        </span>
+        <span id="badge-estado" class="badge bg-secondary state-badge">
+          <i class="bi bi-file-earmark me-1"></i>Nuevo
+        </span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body p-4">
+
+      <!-- ═ CLIENTE ═ -->
+      <div class="mb-4">
+        <h6 class="text-primary border-bottom pb-2 d-flex align-items-center gap-2">
+          <span class="section-num">1</span> Cliente
+        </h6>
+        <div class="row g-2">
+          <div class="col-md-3"><div class="small-muted">DNI</div><div class="fake-field">45012789</div></div>
+          <div class="col-md-5"><div class="small-muted">Nombre</div><div class="fake-field">PÉREZ RAMOS, Carlos</div></div>
+          <div class="col-md-4"><div class="small-muted">Distrito</div><div class="fake-field">San Miguel</div></div>
+        </div>
+      </div>
+
+      <!-- ═ CONDICIONES ═ -->
+      <div class="mb-4">
+        <h6 class="text-primary border-bottom pb-2 d-flex align-items-center gap-2">
+          <span class="section-num">2</span> Condiciones del Crédito
+        </h6>
+        <div class="row g-2">
+          <div class="col-md-3"><div class="small-muted">Monto</div><div class="fake-field">S/ 3,000.00</div></div>
+          <div class="col-md-3"><div class="small-muted">Plazo</div><div class="fake-field">30 cuotas</div></div>
+          <div class="col-md-3"><div class="small-muted">Frecuencia</div><div class="fake-field">Diaria</div></div>
+          <div class="col-md-3"><div class="small-muted">Tasa</div><div class="fake-field">12% mensual</div></div>
+        </div>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="chkBienes">
+          <label class="form-check-label fw-semibold" for="chkBienes">Registrar bienes en garantía</label>
+        </div>
+      </div>
+
+      <!-- ═ BOTONES ═ -->
+      <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+        <button class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</button>
+
+        <!-- Botón "Antes" -->
+        <button id="btn-antes" class="btn btn-primary" style="display:none;">
+          <i class="bi bi-save me-1"></i>Guardar Evaluación
+        </button>
+
+        <!-- Botones "Después" -->
+        <button id="btn-borrador" class="btn btn-outline-primary">
+          <i class="bi bi-file-earmark-plus me-1"></i>Guardar Borrador
+        </button>
+        <button id="btn-enviar" class="btn btn-success" disabled>
+          <i class="bi bi-send-check me-1"></i>Enviar a Revisión
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ GARANTES ═══════════════ -->
+  <div class="card shadow-sm border-0 mb-3 section-container" id="card-garantes">
+    <div class="card-header bg-light py-2">
+      <h6 class="mb-0 text-primary">
+        <span class="section-num">3</span> Garantes
+        <span id="badge-garantes" class="badge bg-warning text-dark ms-2" style="font-size:0.72rem;">Sin garantes</span>
+      </h6>
+    </div>
+    <div class="card-body py-3 text-center text-muted" style="min-height:110px;">
+      <i class="bi bi-people fs-4 d-block mb-1"></i>
+      <span class="small">Aún no hay garantes registrados. Agregue al menos uno si el producto lo requiere.</span>
+      <div class="mt-2"><button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-plus-lg me-1"></i>Agregar Garante</button></div>
+    </div>
+    <div id="overlay-garantes" class="locked-overlay">
+      <div>
+        <i class="bi bi-lock-fill fs-3 d-block text-muted mb-2"></i>
+        <strong class="d-block">Guarde el borrador para habilitar</strong>
+        <span class="small text-muted">Los garantes requieren que el expediente esté registrado.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ BIENES ═══════════════ -->
+  <div class="card shadow-sm border-0 mb-3 section-container" id="card-bienes" style="display:none;">
+    <div class="card-header bg-light py-2">
+      <h6 class="mb-0 text-primary">
+        <span class="section-num">4</span> Bienes en Garantía
+        <span class="badge bg-warning text-dark ms-2" style="font-size:0.72rem;">Sin bienes</span>
+      </h6>
+    </div>
+    <div class="card-body py-3 text-center text-muted" style="min-height:110px;">
+      <i class="bi bi-boxes fs-4 d-block mb-1"></i>
+      <span class="small">Registre los bienes que respaldan el crédito (vehículo, inmueble, etc.).</span>
+      <div class="mt-2"><button class="btn btn-sm btn-outline-primary" disabled><i class="bi bi-plus-lg me-1"></i>Agregar Bien</button></div>
+    </div>
+    <div id="overlay-bienes" class="locked-overlay">
+      <div>
+        <i class="bi bi-lock-fill fs-3 d-block text-muted mb-2"></i>
+        <strong class="d-block">Guarde el borrador para habilitar</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ NOTA DIFERENCIADORA ═══════════════ -->
+  <div id="nota-diff" class="alert alert-light border mt-4">
+    <h6 class="fw-bold mb-2"><i class="bi bi-arrow-left-right me-2 text-primary"></i>Diferencias clave</h6>
+    <div class="row small">
+      <div class="col-md-6">
+        <strong class="text-muted">Antes</strong>
+        <ul class="mb-0">
+          <li>Un solo botón "Guardar" que crea el expediente en estado PENDIENTE.</li>
+          <li>Garantes/Bienes bloqueados hasta guardar.</li>
+          <li>El analista no puede abandonar y retomar sin ensuciar la bandeja del Comité.</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <strong class="text-primary">Después</strong>
+        <ul class="mb-0">
+          <li><strong>Guardar Borrador</strong> → crea expediente en estado BORRADOR (invisible para Comité).</li>
+          <li>Garantes/Bienes se desbloquean automáticamente tras guardar borrador.</li>
+          <li><strong>Enviar a Revisión</strong> → cambia a PENDIENTE (aparece en bandeja del Comité).</li>
+          <li>El analista puede retomar un borrador incompleto desde la bandeja "Mis borradores".</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="toast-save" class="toast align-items-center text-bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Borrador guardado</strong> — EXP-2026-00123. Ahora puede agregar garantes y bienes.
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+  <div id="toast-send" class="toast align-items-center text-bg-primary border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="bi bi-send-check me-2"></i>
+        <strong>Enviado a revisión</strong> — el expediente ya está en la bandeja del Comité.
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const el = {
+    variantBtns: document.querySelectorAll('.variant-btn'),
+    infoTitle: document.getElementById('info-title'),
+    infoDesc: document.getElementById('info-desc'),
+    variantBox: document.getElementById('info-banner'),
+    btnAntes: document.getElementById('btn-antes'),
+    btnBorrador: document.getElementById('btn-borrador'),
+    btnEnviar: document.getElementById('btn-enviar'),
+    badgeExp: document.getElementById('badge-expediente'),
+    badgeEstado: document.getElementById('badge-estado'),
+    tituloForm: document.getElementById('titulo-form'),
+    overlayGar: document.getElementById('overlay-garantes'),
+    overlayBie: document.getElementById('overlay-bienes'),
+    chkBienes: document.getElementById('chkBienes'),
+    cardBienes: document.getElementById('card-bienes'),
+    cardGarantes: document.getElementById('card-garantes'),
+    btnAgregarGar: document.querySelector('#card-garantes button'),
+    btnAgregarBie: document.querySelector('#card-bienes button'),
+  };
+
+  let currentVariant = 'despues';
+  let saved = false;
+
+  function renderVariant() {
+    saved = false;
+    // Reset visual state
+    el.badgeExp.style.display = 'none';
+    el.tituloForm.textContent = 'Nueva Evaluación de Crédito';
+    el.badgeEstado.className = 'badge bg-secondary state-badge';
+    el.badgeEstado.innerHTML = '<i class="bi bi-file-earmark me-1"></i>Nuevo';
+    el.btnEnviar.disabled = true;
+    el.btnAgregarGar.disabled = true;
+    el.btnAgregarBie.disabled = true;
+    el.overlayGar.classList.remove('hidden');
+    el.overlayBie.classList.remove('hidden');
+
+    if (currentVariant === 'antes') {
+      el.btnAntes.style.display = '';
+      el.btnBorrador.style.display = 'none';
+      el.btnEnviar.style.display = 'none';
+      el.infoTitle.textContent = 'Flujo actual';
+      el.infoDesc.textContent = 'Un solo botón "Guardar Evaluación" crea el expediente directamente en estado PENDIENTE. Recién ahí se habilitan garantes y bienes.';
+      el.variantBox.classList.remove('active');
+    } else {
+      el.btnAntes.style.display = 'none';
+      el.btnBorrador.style.display = '';
+      el.btnEnviar.style.display = '';
+      el.infoTitle.textContent = 'Propuesta: Borrador + dos botones';
+      el.infoDesc.textContent = 'El analista guarda un borrador con lo mínimo, las secciones siguientes se desbloquean, y al terminar envía a revisión con un solo click.';
+      el.variantBox.classList.add('active');
+    }
+  }
+
+  function unlockSections(msg) {
+    saved = true;
+    el.badgeExp.style.display = '';
+    el.tituloForm.textContent = 'Evaluación #EXP-2026-00123';
+
+    if (currentVariant === 'antes') {
+      el.badgeEstado.className = 'badge bg-info text-dark state-badge';
+      el.badgeEstado.innerHTML = '<i class="bi bi-clock me-1"></i>Pendiente';
+      el.btnAntes.disabled = true;
+    } else {
+      el.badgeEstado.className = 'badge bg-warning text-dark state-badge';
+      el.badgeEstado.innerHTML = '<i class="bi bi-pencil-square me-1"></i>Borrador';
+      el.btnEnviar.disabled = false;
+      el.btnEnviar.classList.add('pulse');
+      setTimeout(() => el.btnEnviar.classList.remove('pulse'), 3500);
+    }
+
+    el.overlayGar.classList.add('hidden');
+    el.overlayBie.classList.add('hidden');
+    el.btnAgregarGar.disabled = false;
+    el.btnAgregarBie.disabled = false;
+
+    const toast = new bootstrap.Toast(document.getElementById('toast-save'));
+    toast.show();
+
+    // Auto-scroll al bloque de garantes
+    setTimeout(() => el.cardGarantes.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
+  }
+
+  el.variantBtns.forEach(btn => btn.addEventListener('click', () => {
+    el.variantBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentVariant = btn.dataset.variant;
+    renderVariant();
+  }));
+
+  el.chkBienes.addEventListener('change', e => {
+    el.cardBienes.style.display = e.target.checked ? '' : 'none';
+  });
+
+  el.btnAntes.addEventListener('click', () => { if (!saved) unlockSections(); });
+  el.btnBorrador.addEventListener('click', () => { if (!saved) unlockSections(); });
+  el.btnEnviar.addEventListener('click', () => {
+    el.badgeEstado.className = 'badge bg-info text-dark state-badge';
+    el.badgeEstado.innerHTML = '<i class="bi bi-clock me-1"></i>Pendiente';
+    el.btnEnviar.disabled = true;
+    el.btnBorrador.disabled = true;
+    const toast = new bootstrap.Toast(document.getElementById('toast-send'));
+    toast.show();
+  });
+
+  renderVariant();
+</script>
+</body>
+</html>

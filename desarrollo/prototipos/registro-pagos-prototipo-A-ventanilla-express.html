@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo A — Ventanilla Express · Registro de Pagos</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root {
+    --brand: #0f172a;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --ok: #059669;
+    --ok-soft: #ecfdf5;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --bg: #f1f5f9;
+    --border: #e2e8f0;
+  }
+  body { background: var(--bg); color: var(--ink); font-size: 14px; min-height: 100vh; }
+
+  /* Top bar */
+  .vx-top {
+    background: var(--brand); color: #fff;
+    padding: .65rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .vx-top h1 { font-size: 1rem; margin: 0; font-weight: 600; }
+  .vx-top .sub { color: #94a3b8; font-size: .76rem; }
+  .cajero-info {
+    margin-left: auto; display: flex; align-items: center; gap: .65rem;
+    background: rgba(255,255,255,.08); padding: .35rem .75rem; border-radius: 8px;
+  }
+  .cajero-info .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .8rem;
+  }
+  .cajero-info .name { font-size: .82rem; font-weight: 600; }
+  .cajero-info .agencia { font-size: .68rem; color: #94a3b8; }
+
+  /* Search hero */
+  .search-hero {
+    background: #fff; padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);
+  }
+  .search-hero .lbl {
+    font-size: .72rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .06em; font-weight: 600;
+    margin-bottom: .5rem;
+  }
+  .search-big {
+    position: relative; max-width: 720px;
+  }
+  .search-big i {
+    position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%);
+    color: var(--accent); font-size: 1.4rem;
+  }
+  .search-big input {
+    width: 100%; padding: 1rem 1rem 1rem 3.5rem;
+    font-size: 1.15rem; font-weight: 500;
+    border: 2px solid var(--border); border-radius: 10px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search-big input:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .search-hint {
+    font-size: .78rem; color: var(--muted); margin-top: .55rem;
+  }
+  .search-hint kbd {
+    background: #f1f5f9; border: 1px solid var(--border);
+    padding: .1rem .4rem; border-radius: 4px; font-size: .72rem;
+  }
+
+  /* Main grid: cliente + cuotas + panel cobro */
+  .vx-main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+  }
+  @media (max-width: 1100px) { .vx-main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: .75rem 1rem; border-bottom: 1px solid var(--border);
+    background: #fafbfc; font-size: .82rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+    display: flex; align-items: center; gap: .5rem; justify-content: space-between;
+  }
+
+  /* Cliente card */
+  .cliente-card {
+    padding: 1rem 1.1rem;
+    display: flex; gap: 1rem; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .cliente-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .cliente-info h2 {
+    font-size: 1.1rem; margin: 0; font-weight: 600;
+    text-transform: uppercase;
+  }
+  .cliente-info .meta {
+    font-size: .78rem; color: var(--muted); margin-top: .15rem;
+  }
+  .cliente-info .meta i { margin-right: .15rem; }
+  .cliente-stat {
+    margin-left: auto; text-align: right;
+  }
+  .cliente-stat .lbl {
+    font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  }
+  .cliente-stat .val {
+    font-size: 1.1rem; font-weight: 700; color: var(--danger);
+  }
+
+  /* Préstamo selector tabs */
+  .prestamos-tabs {
+    display: flex; gap: 0; padding: 0 1rem;
+    border-bottom: 1px solid var(--border); background: #f8fafc;
+    overflow-x: auto;
+  }
+  .prestamo-tab {
+    padding: .65rem .9rem; cursor: pointer; flex-shrink: 0;
+    color: var(--muted); font-size: .82rem;
+    border-bottom: 2px solid transparent;
+  }
+  .prestamo-tab .num { font-family: monospace; font-weight: 700; }
+  .prestamo-tab .info { font-size: .7rem; color: var(--muted); margin-top: .1rem; }
+  .prestamo-tab:hover { color: var(--ink); }
+  .prestamo-tab.active {
+    color: var(--accent); border-bottom-color: var(--accent); background: #fff;
+    font-weight: 600;
+  }
+  .prestamo-tab.active .info { color: var(--ink); }
+
+  /* Tabla cuotas seleccionables */
+  .cuotas-tbl {
+    width: 100%; font-size: .85rem; border-collapse: collapse;
+  }
+  .cuotas-tbl th {
+    background: #f8fafc;
+    padding: .55rem .8rem;
+    font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .04em; font-size: .68rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  .cuotas-tbl td {
+    padding: .65rem .8rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .cuotas-tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cuotas-tbl td.center { text-align: center; }
+  .cuotas-tbl tr.pagada { background: #f0fdf4; opacity: .6; }
+  .cuotas-tbl tr.vencida { background: #fef2f2; }
+  .cuotas-tbl tr.selected { background: #eff6ff; border-left: 3px solid var(--accent); }
+  .cuotas-tbl tr:hover:not(.pagada) { background: #f1f5f9; cursor: pointer; }
+
+  .cuota-check {
+    width: 18px; height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .pill {
+    padding: .15rem .5rem; border-radius: 4px; font-size: .68rem; font-weight: 700;
+  }
+  .pill-pagado { background: var(--ok-soft); color: var(--ok); }
+  .pill-vencido { background: var(--danger-soft); color: var(--danger); }
+  .pill-pendiente { background: var(--accent-soft); color: var(--accent); }
+
+  /* Panel de cobro (sticky) */
+  .cobro-panel {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem; position: sticky; top: 1rem; align-self: start;
+  }
+  .cobro-panel h3 {
+    font-size: .82rem; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .04em; margin-bottom: .85rem;
+    display: flex; align-items: center; gap: .35rem;
+  }
+
+  .resumen {
+    background: #f8fafc; border-radius: 6px; padding: .75rem; margin-bottom: 1rem;
+  }
+  .resumen-row {
+    display: flex; justify-content: space-between; padding: .25rem 0;
+    font-size: .82rem;
+  }
+  .resumen-row.total {
+    border-top: 1px solid var(--border); margin-top: .35rem; padding-top: .55rem;
+    font-weight: 700; font-size: 1rem;
+  }
+  .resumen-row.total .val { color: var(--accent); font-size: 1.4rem; }
+
+  .form-group { margin-bottom: .75rem; }
+  .form-group label {
+    font-size: .72rem; color: var(--muted); font-weight: 500; margin-bottom: .25rem;
+    display: block;
+  }
+  .form-control { width: 100%; padding: .5rem .65rem; font-size: .9rem;
+                  border: 1px solid var(--border); border-radius: 6px; }
+  .form-control:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .form-control.fw-bold { font-weight: 700; }
+
+  .excedente-info {
+    background: var(--ok-soft); padding: .5rem .65rem; border-radius: 4px;
+    font-size: .78rem; color: var(--ok); font-weight: 600; margin-top: .35rem;
+  }
+  .excedente-info.warn { background: var(--danger-soft); color: var(--danger); }
+
+  .btn-cobrar-big {
+    width: 100%; padding: 1rem; font-size: 1.05rem; font-weight: 700;
+    background: var(--ok); color: #fff; border: none; border-radius: 8px;
+    cursor: pointer; transition: background .12s;
+  }
+  .btn-cobrar-big:hover { background: #047857; }
+  .btn-cobrar-big i { margin-right: .35rem; }
+
+  /* Footer stats turno */
+  .vx-footer {
+    background: #fff; border-top: 1px solid var(--border);
+    padding: .65rem 1.25rem;
+    display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+    font-size: .82rem;
+  }
+  .vx-footer .stat {
+    display: flex; gap: .5rem; align-items: center;
+  }
+  .vx-footer .stat .lbl { color: var(--muted); }
+  .vx-footer .stat .val { font-weight: 700; }
+  .vx-footer .stat .val.ok { color: var(--ok); }
+  .vx-footer .live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--ok);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
+  /* Recibo modal demo */
+  .recibo-banner {
+    background: linear-gradient(90deg, var(--ok), #047857);
+    color: #fff; padding: 1rem 1.25rem;
+    margin: 1rem 1.25rem; border-radius: 10px;
+    display: flex; align-items: center; gap: 1rem;
+    box-shadow: 0 4px 12px rgba(5,150,105,.25);
+  }
+  .recibo-banner i { font-size: 2rem; }
+  .recibo-banner h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+  .recibo-banner .sub { font-size: .85rem; opacity: .9; margin-top: .15rem; }
+  .recibo-banner .acciones {
+    margin-left: auto; display: flex; gap: .5rem;
+  }
+  .btn-light-on-dark {
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+    color: #fff; padding: .45rem .85rem; border-radius: 6px; font-size: .82rem;
+    font-weight: 600; cursor: pointer;
+  }
+  .btn-light-on-dark:hover { background: rgba(255,255,255,.25); }
+
+  .watermark {
+    position: fixed; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,.6); color: #fff; padding: .25rem .6rem;
+    font-size: .7rem; border-radius: 4px; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="vx-top">
+  <i class="bi bi-cash-stack text-warning fs-5"></i>
+  <div>
+    <h1>Caja · Registro de Pagos</h1>
+    <div class="sub">Ventanilla 03 · Turno mañana · 23/abr/2026</div>
+  </div>
+  <div class="cajero-info">
+    <div class="avatar">JL</div>
+    <div>
+      <div class="name">Juan López</div>
+      <div class="agencia">Agencia Los Olivos</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search hero -->
+<div class="search-hero">
+  <div class="lbl">Atender cliente</div>
+  <div class="search-big">
+    <i class="bi bi-search"></i>
+    <input type="text" placeholder="DNI, número de contrato o apellidos..." value="ROJAS MENDOZA">
+  </div>
+  <div class="search-hint">
+    💡 Escanee el DNI o digite los datos. <kbd>Enter</kbd> para buscar · <kbd>Esc</kbd> para limpiar
+  </div>
+</div>
+
+<!-- Banner de recibo (aparece tras cobrar) -->
+<div class="recibo-banner">
+  <i class="bi bi-check-circle-fill"></i>
+  <div>
+    <h3>R-2026-04823 · Pago registrado</h3>
+    <div class="sub">S/ 1,067.92 cobrados · Cuota #3 · ROJAS MENDOZA, Carlos A.</div>
+  </div>
+  <div class="acciones">
+    <button class="btn-light-on-dark"><i class="bi bi-printer"></i> Imprimir</button>
+    <button class="btn-light-on-dark"><i class="bi bi-envelope"></i> Email</button>
+    <button class="btn-light-on-dark"><i class="bi bi-arrow-right"></i> Atender siguiente</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="vx-main">
+
+  <!-- Cliente + cuotas -->
+  <div>
+    <div class="panel">
+
+      <!-- Cliente -->
+      <div class="cliente-card">
+        <div class="cliente-avatar">RM</div>
+        <div class="cliente-info">
+          <h2>ROJAS MENDOZA, Carlos Alberto</h2>
+          <div class="meta">
+            <i class="bi bi-credit-card"></i> DNI 45821679
+            · <i class="bi bi-telephone"></i> 987 654 321
+            · <i class="bi bi-geo-alt"></i> Los Olivos
+            · <span class="pill pill-pendiente">Cliente desde 2023</span>
+          </div>
+        </div>
+        <div class="cliente-stat">
+          <div class="lbl">Deuda Total</div>
+          <div class="val">S/ 4,820.00</div>
+        </div>
+      </div>
+
+      <!-- Tabs préstamos (cliente puede tener varios) -->
+      <div class="prestamos-tabs">
+        <div class="prestamo-tab active">
+          <div class="num">CR-2025-00834</div>
+          <div class="info">Consumo Personal · 2 cuotas vencidas</div>
+        </div>
+        <div class="prestamo-tab">
+          <div class="num">CR-2024-00521</div>
+          <div class="info">Capital de Trabajo · al día</div>
+        </div>
+      </div>
+
+      <div class="panel-head" style="border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <span><i class="bi bi-list-check"></i> Selecciona las cuotas a pagar</span>
+        <span style="text-transform:none; color:var(--muted); font-weight:400; font-size:.78rem;">
+          2 seleccionadas · S/ 1,067.92
+        </span>
+      </div>
+
+      <table class="cuotas-tbl">
+        <thead>
+          <tr>
+            <th class="center" style="width:40px;"></th>
+            <th class="center">#</th>
+            <th>Vencimiento</th>
+            <th class="center">Estado</th>
+            <th class="center">Días</th>
+            <th class="num">Cuota</th>
+            <th class="num">Mora</th>
+            <th class="num">A Pagar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="pagada">
+            <td class="center">—</td>
+            <td class="center fw-bold">1</td><td>15/10/2025</td>
+            <td class="center"><span class="pill pill-pagado">PAGADO</span></td>
+            <td class="center">—</td>
+            <td class="num">985.42</td><td class="num">—</td><td class="num">985.42</td>
+          </tr>
+          <tr class="pagada">
+            <td class="center">—</td>
+            <td class="center fw-bold">2</td><td>15/11/2025</td>
+            <td class="center"><span class="pill pill-pagado">PAGADO</span></td>
+            <td class="center">—</td>
+            <td class="num">985.42</td><td class="num">—</td><td class="num">985.42</td>
+          </tr>
+          <tr class="vencida selected">
+            <td class="center"><input type="checkbox" class="cuota-check" checked></td>
+            <td class="center fw-bold">3</td><td>15/12/2025</td>
+            <td class="center"><span class="pill pill-vencido">VENCIDO</span></td>
+            <td class="center text-danger fw-bold">47</td>
+            <td class="num">985.42</td>
+            <td class="num text-danger fw-bold">82.50</td>
+            <td class="num fw-bold">1,067.92</td>
+          </tr>
+          <tr>
+            <td class="center"><input type="checkbox" class="cuota-check"></td>
+            <td class="center fw-bold">4</td><td>15/01/2026</td>
+            <td class="center"><span class="pill pill-pendiente">PENDIENTE</span></td>
+            <td class="center text-muted">—</td>
+            <td class="num">985.42</td><td class="num">—</td>
+            <td class="num fw-bold">985.42</td>
+          </tr>
+          <tr>
+            <td class="center"><input type="checkbox" class="cuota-check"></td>
+            <td class="center fw-bold">5</td><td>15/02/2026</td>
+            <td class="center"><span class="pill pill-pendiente">PENDIENTE</span></td>
+            <td class="center text-muted">—</td>
+            <td class="num">985.42</td><td class="num">—</td>
+            <td class="num fw-bold">985.42</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Panel de cobro sticky -->
+  <aside class="cobro-panel">
+    <h3><i class="bi bi-cash-coin text-success"></i> Resumen de Cobro</h3>
+
+    <div class="resumen">
+      <div class="resumen-row">
+        <span>Cuotas seleccionadas</span>
+        <span><strong>1</strong></span>
+      </div>
+      <div class="resumen-row">
+        <span>Capital + Interés</span>
+        <span class="val">S/ 985.42</span>
+      </div>
+      <div class="resumen-row">
+        <span>Mora</span>
+        <span class="val text-danger">S/ 82.50</span>
+      </div>
+      <div class="resumen-row total">
+        <span>Total a Cobrar</span>
+        <span class="val">S/ 1,067.92</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Importe entregado por el cliente</label>
+      <div class="input-group">
+        <span class="input-group-text" style="border:1px solid var(--border); border-right:none; padding:.5rem .65rem; background:#f8fafc;">S/</span>
+        <input class="form-control fw-bold" value="1100.00" style="border-radius: 0 6px 6px 0;">
+      </div>
+      <div class="excedente-info">
+        <i class="bi bi-plus-circle"></i> Excedente: S/ 32.08
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Tipo de pago</label>
+      <select class="form-control">
+        <option>Efectivo</option>
+        <option>Transferencia</option>
+        <option>Depósito</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Con el excedente</label>
+      <select class="form-control">
+        <option>Devolver al cliente</option>
+        <option>Abonar a siguiente cuota</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Observaciones (opcional)</label>
+      <input class="form-control" placeholder="Notas del cobro...">
+    </div>
+
+    <button class="btn-cobrar-big">
+      <i class="bi bi-check-circle-fill"></i> COBRAR S/ 1,067.92
+    </button>
+
+    <div style="text-align:center; font-size:.7rem; color:var(--muted); margin-top:.5rem;">
+      <kbd style="background:#f1f5f9; padding:.05rem .3rem; border-radius:3px;">F8</kbd> Confirmar ·
+      <kbd style="background:#f1f5f9; padding:.05rem .3rem; border-radius:3px;">Esc</kbd> Cancelar
+    </div>
+  </aside>
+
+</div>
+
+<!-- Footer stats turno -->
+<div class="vx-footer">
+  <span class="live-dot"></span>
+  <div class="stat">
+    <span class="lbl">Turno iniciado:</span>
+    <span class="val">08:00 (4h 32m)</span>
+  </div>
+  <div class="stat">
+    <span class="lbl">Cobros:</span>
+    <span class="val ok">23</span>
+  </div>
+  <div class="stat">
+    <span class="lbl">Total cobrado:</span>
+    <span class="val ok">S/ 18,450.32</span>
+  </div>
+  <div class="stat">
+    <span class="lbl">Promedio:</span>
+    <span class="val">S/ 802.18</span>
+  </div>
+  <div class="stat" style="margin-left:auto;">
+    <button style="background:none; border:1px solid var(--border); padding:.3rem .65rem; border-radius:6px; font-size:.78rem; cursor:pointer;">
+      <i class="bi bi-clock-history"></i> Ver histórico del turno
+    </button>
+    <button style="background:var(--danger); color:#fff; border:none; padding:.3rem .65rem; border-radius:6px; font-size:.78rem; cursor:pointer; margin-left:.4rem;">
+      <i class="bi bi-box-arrow-right"></i> Cerrar turno
+    </button>
+  </div>
+</div>
+
+<div class="watermark">Prototipo A — Ventanilla Express</div>
+
+</body>
+</html>

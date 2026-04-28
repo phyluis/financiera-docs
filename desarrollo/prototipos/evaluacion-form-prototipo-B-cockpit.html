@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo B — Cockpit · Evaluación de Crédito</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root {
+    --brand: #0f172a;
+    --accent: #2563eb;
+    --accent-soft: #eff6ff;
+    --ok: #059669;
+    --ok-soft: #ecfdf5;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --bg: #f1f5f9;
+    --border: #e2e8f0;
+    --panel: #fff;
+  }
+  body { background: var(--bg); color: var(--ink); font-size: 13.5px; }
+
+  /* Top sticky header = code + client + actions */
+  .cockpit-head {
+    background: var(--brand); color: #fff; padding: .75rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .cockpit-head .exp {
+    font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+    background: rgba(255,255,255,.12); padding: .35rem .7rem; border-radius: 6px;
+    font-weight: 600; font-size: .85rem; letter-spacing: .02em;
+  }
+  .cockpit-head h1 { font-size: 1.05rem; margin: 0; font-weight: 600; }
+  .cockpit-head .sub { color: #94a3b8; font-size: .78rem; margin-top: .1rem; }
+  .cockpit-head .btn-outline-light { border-color: rgba(255,255,255,.2); color: #fff; }
+
+  /* Stepper horizontal */
+  .stepper {
+    background: #fff; padding: .75rem 1.25rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0; overflow-x: auto;
+  }
+  .step {
+    display: flex; align-items: center; gap: .5rem; flex-shrink: 0; padding: 0 1rem;
+    position: relative;
+  }
+  .step::after {
+    content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
+    width: 20px; height: 1.5px; background: var(--border);
+  }
+  .step:last-child::after { display: none; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; color: var(--muted);
+    font-size: .72rem; font-weight: 700; display: inline-flex;
+    align-items: center; justify-content: center;
+  }
+  .step-label { font-size: .8rem; color: var(--muted); }
+  .step.done .step-num { background: var(--ok); color: #fff; }
+  .step.done .step-label { color: var(--ink); font-weight: 500; }
+  .step.current .step-num { background: var(--accent); color: #fff; box-shadow: 0 0 0 4px var(--accent-soft); }
+  .step.current .step-label { color: var(--accent); font-weight: 600; }
+
+  /* KPI strip */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0;
+    background: #fff; border-bottom: 1px solid var(--border);
+  }
+  .kpi {
+    padding: 1rem 1.25rem; border-right: 1px solid var(--border);
+  }
+  .kpi:last-child { border-right: none; }
+  .kpi .lbl {
+    font-size: .7rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .05em; font-weight: 600;
+  }
+  .kpi .val { font-size: 1.5rem; font-weight: 700; color: var(--ink); line-height: 1.2; margin-top: .15rem; }
+  .kpi .hint { font-size: .72rem; color: var(--muted); margin-top: .25rem; }
+  .kpi.ok .val { color: var(--ok); }
+  .kpi.warn .val { color: var(--warn); }
+  .kpi.danger .val { color: var(--danger); }
+  .kpi .chip {
+    display: inline-block; padding: .15rem .5rem; border-radius: 4px;
+    font-size: .7rem; font-weight: 600;
+  }
+  .kpi .chip.ok { background: var(--ok-soft); color: var(--ok); }
+  .kpi .chip.warn { background: var(--warn-soft); color: var(--warn); }
+
+  /* Grid 3 columnas */
+  .cockpit-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; padding: 1rem 1.25rem;
+  }
+  @media (max-width: 1200px) { .cockpit-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 768px) { .cockpit-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .panel-head {
+    padding: .65rem .85rem; border-bottom: 1px solid var(--border);
+    font-size: .78rem; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .04em; font-weight: 600; display: flex;
+    align-items: center; gap: .4rem; justify-content: space-between;
+  }
+  .panel-body { padding: .9rem; }
+
+  .form-label { font-size: .75rem; color: var(--muted); font-weight: 500; margin-bottom: .25rem; }
+  .form-control, .form-select { font-size: .85rem; padding: .38rem .55rem; border-color: var(--border); }
+  .form-control:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .form-control[readonly] { background: #f8fafc; }
+
+  /* Dictamen compact */
+  .dict-row { display: flex; gap: .35rem; flex-wrap: wrap; }
+  .dict-chip {
+    flex: 1; min-width: 70px; padding: .5rem; text-align: center;
+    border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer;
+    transition: all .15s; background: #fff; font-size: .72rem; font-weight: 600;
+  }
+  .dict-chip i { display: block; font-size: 1.1rem; margin-bottom: .2rem; color: var(--muted); }
+  .dict-chip.selected { border-color: var(--ok); background: var(--ok-soft); }
+  .dict-chip.selected i { color: var(--ok); }
+
+  /* Collapsible sections at bottom */
+  .collapsible {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    margin: 0 1.25rem 1rem;
+  }
+  .collapsible-head {
+    padding: .75rem 1rem; cursor: pointer; display: flex;
+    align-items: center; justify-content: space-between; font-weight: 600; font-size: .88rem;
+  }
+  .collapsible-head .badge { font-weight: 500; }
+  .collapsible-body {
+    padding: 0 1rem 1rem; border-top: 1px solid var(--border); padding-top: 1rem;
+  }
+  .collapsible-body.hidden { display: none; }
+
+  /* Table dense */
+  .tbl-dense { width: 100%; font-size: .78rem; }
+  .tbl-dense th {
+    background: #f8fafc; padding: .45rem .6rem; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .03em; font-size: .7rem;
+    border-bottom: 1px solid var(--border); text-align: left;
+  }
+  .tbl-dense td { padding: .5rem .6rem; border-bottom: 1px solid #f1f5f9; }
+  .tbl-dense td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Action ghost buttons in header */
+  .hdr-actions .btn { font-size: .8rem; }
+
+  /* Badges */
+  .tag { display: inline-block; padding: .15rem .5rem; border-radius: 4px; font-size: .7rem; font-weight: 600; }
+  .tag-ok { background: var(--ok-soft); color: var(--ok); }
+  .tag-warn { background: var(--warn-soft); color: var(--warn); }
+  .tag-info { background: var(--accent-soft); color: var(--accent); }
+
+  .watermark {
+    position: fixed; bottom: 10px; right: 10px;
+    background: rgba(0,0,0,.6); color: #fff; padding: .25rem .6rem;
+    font-size: .7rem; border-radius: 4px; font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<!-- Cockpit header -->
+<div class="cockpit-head">
+  <span class="exp"><i class="bi bi-hash"></i> EXP-2026-01847</span>
+  <div>
+    <h1>ROJAS MENDOZA, Carlos Alberto</h1>
+    <div class="sub">DNI 45821679 · Los Olivos - Lima · Analista: María Quispe</div>
+  </div>
+  <div class="ms-auto d-flex gap-2 hdr-actions align-items-center">
+    <span class="tag tag-warn"><i class="bi bi-pencil-square"></i> Borrador</span>
+    <button class="btn btn-sm btn-outline-light">
+      <i class="bi bi-clipboard"></i> Copiar
+    </button>
+    <button class="btn btn-sm btn-outline-light">
+      <i class="bi bi-save"></i> Guardar
+    </button>
+    <button class="btn btn-sm btn-primary">
+      <i class="bi bi-send-check"></i> Enviar a Revisión
+    </button>
+  </div>
+</div>
+
+<!-- Stepper -->
+<div class="stepper">
+  <div class="step current">
+    <div class="step-num">1</div>
+    <div class="step-label">Borrador</div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-label">Pendiente</div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-label">En Comité</div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-label">Aprobado</div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-label">Desembolsado</div>
+  </div>
+</div>
+
+<!-- KPI strip -->
+<div class="kpi-strip">
+  <div class="kpi">
+    <div class="lbl">Monto Solicitado</div>
+    <div class="val">S/ 15,000</div>
+    <div class="hint">Rango 1K — 30K</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Cuota Estimada</div>
+    <div class="val">S/ 985</div>
+    <div class="hint">18 cuotas · 3.2%</div>
+  </div>
+  <div class="kpi warn">
+    <div class="lbl">Ratio Endeud.</div>
+    <div class="val">30.8%</div>
+    <div class="hint"><span class="chip warn">Cerca del límite</span></div>
+  </div>
+  <div class="kpi ok">
+    <div class="lbl">Score Crediticio</div>
+    <div class="val">687</div>
+    <div class="hint"><span class="chip ok">Bueno</span></div>
+  </div>
+  <div class="kpi ok">
+    <div class="lbl">Calificación Buró</div>
+    <div class="val" style="font-size:1.2rem; padding-top:.3rem;">NORMAL</div>
+    <div class="hint">2 entidades · S/ 8,450</div>
+  </div>
+  <div class="kpi">
+    <div class="lbl">Estado</div>
+    <div class="val" style="font-size:1.1rem; padding-top:.3rem;"><span class="tag tag-warn">BORRADOR</span></div>
+    <div class="hint">Listo para enviar</div>
+  </div>
+</div>
+
+<!-- 3 columnas -->
+<div class="cockpit-grid">
+
+  <!-- Col 1: Cliente + Solicitud -->
+  <div class="panel">
+    <div class="panel-head">
+      <span><i class="bi bi-person-badge"></i> Cliente &amp; Solicitud</span>
+      <button class="btn btn-sm btn-link p-0" style="font-size:.72rem;">Cambiar cliente</button>
+    </div>
+    <div class="panel-body">
+      <div class="mb-3 pb-3" style="border-bottom:1px solid var(--border);">
+        <div style="font-weight:600;">ROJAS MENDOZA, Carlos Alberto</div>
+        <div class="text-muted" style="font-size:.78rem;">DNI 45821679 · Los Olivos - Lima</div>
+        <div class="mt-1"><span class="tag tag-info">Cliente desde 2023</span></div>
+      </div>
+
+      <div class="row g-2">
+        <div class="col-12">
+          <label class="form-label">Producto</label>
+          <select class="form-select">
+            <option>Crédito Consumo Personal</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Monto (S/)</label>
+          <input class="form-control" value="15,000.00">
+        </div>
+        <div class="col-3">
+          <label class="form-label">Cuotas</label>
+          <input class="form-control" value="18">
+        </div>
+        <div class="col-3">
+          <label class="form-label">Tasa %</label>
+          <input class="form-control" value="3.20">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Propósito</label>
+          <textarea class="form-control" rows="2">Capital de trabajo para ampliación de bodega.</textarea>
+        </div>
+        <div class="col-12">
+          <div class="form-check form-switch mt-1">
+            <input class="form-check-input" type="checkbox" checked>
+            <label class="form-check-label" style="font-size:.82rem;">
+              Cuenta con bienes en garantía
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Col 2: Capacidad + Buró -->
+  <div>
+    <div class="panel mb-3">
+      <div class="panel-head">
+        <span><i class="bi bi-cash-coin"></i> Capacidad de Pago</span>
+      </div>
+      <div class="panel-body">
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Ingresos Netos</label>
+            <input class="form-control" value="3,200.00">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Gastos Fijos</label>
+            <input class="form-control" value="980.00">
+          </div>
+          <div class="col-4">
+            <label class="form-label">Cuota Est.</label>
+            <input class="form-control" readonly value="985.42">
+          </div>
+          <div class="col-4">
+            <label class="form-label">Disponible</label>
+            <input class="form-control" readonly value="1,234.58">
+          </div>
+          <div class="col-4">
+            <label class="form-label">Ratio %</label>
+            <input class="form-control fw-bold" readonly value="30.8" style="color:var(--warn);">
+          </div>
+        </div>
+
+        <!-- Ratio visual -->
+        <div class="mt-2">
+          <div class="d-flex justify-content-between" style="font-size:.7rem; color:var(--muted);">
+            <span>0%</span>
+            <span class="text-success fw-bold">30% Óptimo</span>
+            <span class="text-warning fw-bold">40% Límite</span>
+            <span>100%</span>
+          </div>
+          <div style="height:6px; background:#e2e8f0; border-radius:4px; margin-top:.3rem; position:relative;">
+            <div style="height:100%; width:30.8%; background:var(--warn); border-radius:4px;"></div>
+            <div style="position:absolute; left:30%; top:-2px; width:2px; height:10px; background:var(--ok);"></div>
+            <div style="position:absolute; left:40%; top:-2px; width:2px; height:10px; background:var(--danger);"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span><i class="bi bi-shield-exclamation"></i> Centrales de Riesgo</span>
+      </div>
+      <div class="panel-body">
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label">Score</label>
+            <input class="form-control" value="687">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Buró</label>
+            <select class="form-select"><option selected>Normal</option></select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Deuda Sistema</label>
+            <input class="form-control" value="8,450.00">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Entidades</label>
+            <input class="form-control" value="2">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Col 3: Dictamen + Observaciones + Acciones -->
+  <div class="panel">
+    <div class="panel-head">
+      <span><i class="bi bi-clipboard-check"></i> Dictamen del Analista</span>
+    </div>
+    <div class="panel-body">
+      <label class="form-label">Estado de Evaluación</label>
+      <div class="dict-row mb-3">
+        <div class="dict-chip selected"><i class="bi bi-check-circle-fill"></i>APROBADO</div>
+        <div class="dict-chip"><i class="bi bi-eye-fill"></i>OBSERV.</div>
+        <div class="dict-chip"><i class="bi bi-x-circle-fill"></i>RECHAZ.</div>
+        <div class="dict-chip"><i class="bi bi-hourglass-split"></i>PEND.</div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-7">
+          <label class="form-label">Monto Aprobado</label>
+          <div class="input-group">
+            <span class="input-group-text">S/</span>
+            <input class="form-control fw-bold" value="15,000.00">
+          </div>
+        </div>
+        <div class="col-5">
+          <label class="form-label">Riesgo</label>
+          <select class="form-select"><option selected>Medio</option></select>
+        </div>
+      </div>
+
+      <label class="form-label">Observaciones</label>
+      <textarea class="form-control" rows="5">Cliente con historial de pagos puntuales en las últimas 2 operaciones. Negocio con 4 años de operación verificados. Se recomienda aprobación con monto solicitado.</textarea>
+
+      <div class="mt-3 pt-3" style="border-top:1px solid var(--border); font-size:.72rem; color:var(--muted);">
+        <div><i class="bi bi-clock"></i> Creado hoy 10:32 · María Quispe</div>
+        <div><i class="bi bi-pencil"></i> Sin modificaciones</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Collapsibles -->
+<div class="collapsible">
+  <div class="collapsible-head">
+    <span><i class="bi bi-people-fill text-primary"></i> Garantes <span class="badge bg-secondary">2</span></span>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+  <div class="collapsible-body">
+    <table class="tbl-dense">
+      <thead><tr><th>DNI</th><th>Apellidos y Nombres</th><th>Parentesco</th><th>Tel.</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>43219087</td><td>ROJAS MENDOZA, Luisa</td><td><span class="tag tag-info">Hermana</span></td><td>987 654 321</td><td class="num"><button class="btn btn-sm btn-link p-0">✕</button></td></tr>
+        <tr><td>47812345</td><td>MENDOZA PAZ, Rosa</td><td><span class="tag tag-info">Madre</span></td><td>911 222 333</td><td class="num"><button class="btn btn-sm btn-link p-0">✕</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="collapsible">
+  <div class="collapsible-head">
+    <span><i class="bi bi-shield-lock text-primary"></i> Bienes en Garantía <span class="badge bg-secondary">1</span></span>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+  <div class="collapsible-body">
+    <table class="tbl-dense">
+      <thead><tr><th>Tipo</th><th>Descripción</th><th>Valor Tasación</th><th>Propietario</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag tag-info">Vehículo</span></td><td>Toyota Yaris 2019 · Placa ABC-123</td><td class="num">S/ 28,000</td><td>Carlos Rojas</td><td class="num"><button class="btn btn-sm btn-link p-0">✕</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="collapsible">
+  <div class="collapsible-head">
+    <span><i class="bi bi-table text-primary"></i> Cronograma Simulado <span class="badge bg-secondary">18 cuotas</span></span>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+  <div class="collapsible-body hidden"></div>
+</div>
+
+<div class="collapsible">
+  <div class="collapsible-head">
+    <span><i class="bi bi-clock-history text-primary"></i> Historial de Versiones</span>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+  <div class="collapsible-body hidden"></div>
+</div>
+
+<div class="watermark">Prototipo B — Cockpit Dashboard</div>
+
+</body>
+</html>
