@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo B · Aprobación Crediticia (split-view, corporativo) — Reelige</title>
+<style>
+  :root {
+    --navy:        #1a3a5c;
+    --navy-soft:   #e8f0f9;
+    --navy-hover:  #153050;
+    --gray-50:     #f8fafc;
+    --gray-100:    #f1f5f9;
+    --gray-200:    #e2e8f0;
+    --gray-300:    #cbd5e1;
+    --gray-500:    #64748b;
+    --gray-700:    #334155;
+    --gray-900:    #0f172a;
+    --bg-page:     #f1f5f9;
+    --bg-card:     #ffffff;
+    --success:     #198754;
+    --success-soft:#d1e7dd;
+    --danger:      #dc3545;
+    --danger-soft: #f8d7da;
+    --warn-soft:   #fff8e1;
+    --warn-text:   #856404;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-page); color: var(--gray-900); padding: 20px; font-size: 13px; }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* ── Header global ── */
+  .header { background: var(--bg-card); border: 1px solid var(--gray-200);
+    border-radius: 8px; padding: 12px 22px; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+  .header .title { display: flex; align-items: center; gap: 12px; }
+  .header .ico { width: 38px; height: 38px; border-radius: 8px; background: var(--navy-soft);
+    color: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .header h1 { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+  .header small { color: var(--gray-500); font-size: 11px; display: block; margin-top: 1px; }
+  .header .badge-estado { padding: 5px 14px; border-radius: 50rem;
+    background: var(--warn-soft); color: var(--warn-text); font-weight: 700;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+    border: 1px solid #ffe69c; }
+
+  /* ════════════════════════════════════════════════════════════
+     LAYOUT SPLIT: sidebar (info-only) + main (editable)
+  ════════════════════════════════════════════════════════════ */
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 14px; align-items: start; }
+
+  /* ── COLUMNA IZQUIERDA: STICKY (read-only) ── */
+  .sidebar { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 12px; }
+
+  .ro-card { background: var(--bg-card); border: 1px solid var(--gray-200);
+    border-radius: 8px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+  .ro-card .ro-header { background: var(--gray-50); padding: 10px 14px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: space-between; }
+  .ro-card .ro-header h3 { font-size: 12px; font-weight: 700; color: var(--navy);
+    text-transform: uppercase; letter-spacing: .04em;
+    display: flex; align-items: center; gap: 6px; }
+  .ro-card .ro-header .ro-num { width: 20px; height: 20px; border-radius: 4px;
+    background: var(--navy); color: white; display: inline-flex;
+    align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+  .ro-card .ro-header .ro-lock { font-size: 10px; color: var(--gray-500); }
+  .ro-card .ro-body { padding: 12px 14px; font-size: 12px; }
+
+  /* Datos del cliente — lista clave/valor */
+  .ro-list { display: flex; flex-direction: column; gap: 9px; }
+  .ro-list .row { display: flex; justify-content: space-between;
+    align-items: baseline; gap: 10px; padding-bottom: 7px;
+    border-bottom: 1px dashed var(--gray-100); }
+  .ro-list .row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .ro-list .row .k { font-size: 10.5px; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
+  .ro-list .row .v { font-size: 12px; color: var(--gray-900);
+    font-weight: 600; text-align: right; max-width: 60%; line-height: 1.3; }
+
+  /* Avatar cliente */
+  .client-pill { display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; background: var(--navy-soft);
+    border-bottom: 1px solid var(--gray-200); }
+  .client-pill .avatar { width: 38px; height: 38px; border-radius: 50%;
+    background: var(--navy); color: white; display: flex;
+    align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .client-pill .nm { font-size: 13px; font-weight: 700; color: var(--gray-900);
+    line-height: 1.2; }
+  .client-pill .id { font-size: 10.5px; color: var(--gray-500); margin-top: 1px; }
+
+  /* KPIs financieros */
+  .fin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fin-kpi { background: var(--gray-50); border: 1px solid var(--gray-200);
+    border-radius: 6px; padding: 8px 10px; }
+  .fin-kpi label { display: block; font-size: 9.5px; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: .04em; font-weight: 600; margin-bottom: 2px; }
+  .fin-kpi .v { font-size: 14px; font-weight: 700; color: var(--navy);
+    font-variant-numeric: tabular-nums; }
+  .fin-kpi .v.success { color: var(--success); }
+  .fin-kpi .v.danger { color: var(--danger); }
+
+  .fin-row { display: flex; justify-content: space-between;
+    font-size: 11px; padding: 7px 0; border-bottom: 1px dashed var(--gray-100); }
+  .fin-row:last-of-type { border-bottom: 0; }
+  .fin-row .k { color: var(--gray-500); }
+  .fin-row .v { font-weight: 700; color: var(--gray-900);
+    font-variant-numeric: tabular-nums; }
+
+  /* Barra de ratio */
+  .ratio-mini { margin-top: 10px; }
+  .ratio-mini .lbl { display: flex; justify-content: space-between;
+    font-size: 10.5px; color: var(--gray-500); margin-bottom: 3px; }
+  .ratio-mini .lbl b { color: var(--success); font-size: 11.5px; }
+  .ratio-mini .bar { height: 5px; background: var(--gray-200);
+    border-radius: 3px; overflow: hidden; }
+  .ratio-mini .fill { height: 100%; background: var(--success); transition: width .4s; }
+
+  /* ── COLUMNA DERECHA: panel editable principal ── */
+  .main-col { display: flex; flex-direction: column; gap: 14px; }
+
+  .ed-card { background: var(--bg-card); border: 1px solid var(--gray-200);
+    border-radius: 8px; border-left: 4px solid var(--navy);
+    box-shadow: 0 1px 3px rgba(15,23,42,.04); overflow: hidden; }
+  .ed-card .ed-header { background: var(--navy-soft);
+    padding: 12px 20px; border-bottom: 1px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: space-between; }
+  .ed-card .ed-header .left { display: flex; align-items: center; gap: 10px; }
+  .ed-card .ed-header .num { width: 28px; height: 28px; border-radius: 6px;
+    background: var(--navy); color: white; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700; }
+  .ed-card .ed-header h3 { font-size: 14px; font-weight: 700; color: var(--navy); }
+  .ed-card .ed-header .subt { font-size: 10.5px; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: .04em; }
+  .ed-card .ed-header .badge { padding: 4px 12px; border-radius: 50rem;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    background: var(--warn-soft); color: var(--warn-text);
+    border: 1px solid #ffe69c; letter-spacing: .04em; }
+  .ed-card .ed-body { padding: 18px 22px; }
+
+  /* ── Sección 3: Comité ── */
+  .voto-summary { display: flex; gap: 16px; margin-bottom: 14px;
+    padding: 10px 16px; background: var(--gray-50);
+    border: 1px solid var(--gray-200); border-radius: 6px; }
+  .voto-summary .item { font-size: 11px; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .voto-summary .item b { font-size: 18px; color: var(--navy);
+    font-weight: 700; display: block; }
+  .voto-summary .item.ok b { color: var(--success); }
+  .voto-summary .item.rec b { color: var(--danger); }
+
+  .comite-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .comite-table thead th { padding: 8px 12px; background: var(--gray-50);
+    color: var(--gray-500); font-weight: 600; text-align: left;
+    text-transform: uppercase; font-size: 10px; letter-spacing: .04em;
+    border-bottom: 1px solid var(--gray-200); }
+  .comite-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); }
+  .comite-table .miembro { font-weight: 600; color: var(--gray-900); }
+  .comite-table .rol { font-size: 11px; color: var(--gray-500); }
+  .vote-badge { display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 50rem; font-size: 11px; font-weight: 600; }
+  .vote-badge.aprobado { background: var(--success-soft); color: #0f5132; }
+  .vote-badge.rechazado { background: var(--danger-soft); color: #842029; }
+  .vote-badge.pendiente { background: var(--gray-100); color: var(--gray-500); }
+
+  .form-add-vote { display: grid; grid-template-columns: 1fr 2fr auto auto; gap: 8px;
+    align-items: end; padding: 12px; background: white;
+    border: 1px dashed var(--gray-300); border-radius: 6px; margin-top: 12px; }
+
+  /* ── Sección 4: Resolución ── */
+  .decision-buttons { display: flex; gap: 10px; margin: 8px 0 14px; }
+  .decision-btn { flex: 1; padding: 14px; border-radius: 8px;
+    border: 1.5px solid; background: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 700; font-size: 13px; text-transform: uppercase;
+    letter-spacing: .04em; transition: all .15s; }
+  .decision-btn-aprobar { border-color: var(--success); color: var(--success); }
+  .decision-btn-aprobar:hover, .decision-btn-aprobar.selected {
+    background: var(--success); color: white; box-shadow: 0 2px 8px rgba(25,135,84,.2); }
+  .decision-btn-rechazar { border-color: var(--danger); color: var(--danger); }
+  .decision-btn-rechazar:hover, .decision-btn-rechazar.selected {
+    background: var(--danger); color: white; box-shadow: 0 2px 8px rgba(220,53,69,.2); }
+
+  /* Forms genéricos */
+  .form-row { display: grid; gap: 12px; margin-bottom: 12px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 2fr 1fr 1fr; }
+  .field label { display: block; font-size: 11px; color: var(--gray-700);
+    font-weight: 600; margin-bottom: 4px; text-transform: uppercase;
+    letter-spacing: .04em; }
+  .field label .req { color: var(--danger); }
+  .field input, .field select, .field textarea { width: 100%; padding: 8px 11px;
+    font: inherit; font-size: 13px; border: 1px solid var(--gray-200);
+    border-radius: 5px; background: white; color: var(--gray-900); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 0; border-color: var(--navy); box-shadow: 0 0 0 .15rem rgba(26,58,92,.10); }
+  .input-group { display: flex; }
+  .input-group .prefix { padding: 8px 12px; background: var(--gray-50);
+    border: 1px solid var(--gray-200); border-right: 0; border-radius: 5px 0 0 5px;
+    color: var(--gray-500); font-weight: 600; font-size: 12px; }
+  .input-group input { border-radius: 0 5px 5px 0; }
+
+  /* Footer sticky */
+  .footer { background: var(--bg-card); border: 1px solid var(--gray-200);
+    border-radius: 8px; padding: 12px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 -1px 3px rgba(15,23,42,.04);
+    position: sticky; bottom: 14px; }
+  .btn { padding: 9px 18px; border-radius: 6px; border: 1px solid; font: inherit;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--navy); color: white; border-color: var(--navy); }
+  .btn-primary:hover { background: var(--navy-hover); }
+  .btn-outline { background: white; color: var(--navy); border-color: var(--gray-300); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="title">
+      <div class="ico">⚖</div>
+      <div>
+        <h1>Aprobación Crediticia · EXP-2026-0142</h1>
+        <small>Solicitud de S/ 5,000 a 12 cuotas · Agencia Pilcomayo</small>
+      </div>
+    </div>
+    <div>
+      <span class="badge-estado">EN COMITÉ</span>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- ════════ SIDEBAR (sticky, read-only) ════════ -->
+    <div class="sidebar">
+
+      <!-- 1. Datos del Cliente -->
+      <div class="ro-card">
+        <div class="client-pill">
+          <div class="avatar">RQ</div>
+          <div>
+            <div class="nm">Quispe Mamani, Rosa Maria</div>
+            <div class="id">DNI 45100001 · Casada · 41 años</div>
+          </div>
+        </div>
+        <div class="ro-header">
+          <h3><span class="ro-num">1</span>Datos del Cliente</h3>
+          <span class="ro-lock">🔒</span>
+        </div>
+        <div class="ro-body">
+          <div class="ro-list">
+            <div class="row">
+              <span class="k">Ocupación</span>
+              <span class="v">Comerciante · Independiente · 6 años</span>
+            </div>
+            <div class="row">
+              <span class="k">Domicilio</span>
+              <span class="v">Jr. Las Begonias 245<br>AAHH Las Lomas Sur<br>S.J. Lurigancho · Lima</span>
+            </div>
+            <div class="row">
+              <span class="k">Tenencia</span>
+              <span class="v">Propia · 3-5 años</span>
+            </div>
+            <div class="row">
+              <span class="k">Email</span>
+              <span class="v">rosa.quispe@test.com</span>
+            </div>
+            <div class="row">
+              <span class="k">Celular</span>
+              <span class="v">987 100 001</span>
+            </div>
+            <div class="row">
+              <span class="k">Solicitud</span>
+              <span class="v">S/ 5,000 · 12 cuotas</span>
+            </div>
+            <div class="row">
+              <span class="k">Propósito</span>
+              <span class="v">Capital de trabajo<br>(compra de mercadería)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Resumen Financiero -->
+      <div class="ro-card">
+        <div class="ro-header">
+          <h3><span class="ro-num">2</span>Resumen Financiero</h3>
+          <span class="ro-lock">🔒</span>
+        </div>
+        <div class="ro-body">
+          <div class="fin-grid" style="margin-bottom: 10px;">
+            <div class="fin-kpi">
+              <label>Ingresos</label>
+              <div class="v success">S/ 3,200</div>
+            </div>
+            <div class="fin-kpi">
+              <label>Gastos</label>
+              <div class="v danger">S/ 1,500</div>
+            </div>
+            <div class="fin-kpi" style="grid-column: 1 / -1; background: var(--success-soft); border-color: #a3cfbb;">
+              <label style="color:#0f5132">Excedente Neto Disponible</label>
+              <div class="v success" style="font-size:18px;">S/ 1,700</div>
+            </div>
+          </div>
+
+          <div class="fin-row">
+            <span class="k">Cuota Estimada</span>
+            <span class="v">S/ 487.50</span>
+          </div>
+          <div class="fin-row">
+            <span class="k">Tasa Aplicada</span>
+            <span class="v">TEA 28%</span>
+          </div>
+          <div class="fin-row">
+            <span class="k">Score Crediticio</span>
+            <span class="v">685 (NORMAL)</span>
+          </div>
+          <div class="fin-row">
+            <span class="k">Deuda Sistema</span>
+            <span class="v">S/ 3,200 · 2 entidades</span>
+          </div>
+          <div class="fin-row">
+            <span class="k">Riesgo Interno</span>
+            <span class="v">MEDIO</span>
+          </div>
+
+          <div class="ratio-mini">
+            <div class="lbl">
+              <span>Ratio Cuota / Excedente</span>
+              <b>28.7%</b>
+            </div>
+            <div class="bar"><div class="fill" style="width: 28.7%"></div></div>
+            <div class="lbl" style="margin-top:3px;">
+              <span style="font-size:9.5px;">Límite operativo</span>
+              <span style="font-size:9.5px;">40%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ════════ MAIN COL (editable) ════════ -->
+    <div class="main-col">
+
+      <!-- 3. Comité de Crédito -->
+      <div class="ed-card">
+        <div class="ed-header">
+          <div class="left">
+            <div class="num">3</div>
+            <div>
+              <h3>Comité de Crédito</h3>
+              <div class="subt">Votación de miembros</div>
+            </div>
+          </div>
+          <span class="badge">✎ Editable</span>
+        </div>
+        <div class="ed-body">
+          <div class="voto-summary">
+            <div class="item ok"><b>2</b>Aprobados</div>
+            <div class="item rec"><b>0</b>Rechazados</div>
+            <div class="item"><b>1</b>Pendiente</div>
+            <div class="item" style="margin-left:auto"><b>3</b>Total miembros</div>
+          </div>
+
+          <table class="comite-table">
+            <thead>
+              <tr>
+                <th>Miembro</th>
+                <th>Cargo</th>
+                <th>Voto</th>
+                <th>Comentario</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="miembro">Pérez García, Juan</div>
+                  <div class="rol">Supervisor de Crédito</div>
+                </td>
+                <td>Presidente</td>
+                <td><span class="vote-badge aprobado">✓ APROBADO</span></td>
+                <td>Cliente con buen historial.</td>
+                <td>18/05 14:32</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="miembro">López Canchumanya, Percy</div>
+                  <div class="rol">Analista de Crédito</div>
+                </td>
+                <td>Vocal</td>
+                <td><span class="vote-badge aprobado">✓ APROBADO</span></td>
+                <td>Visita conforme. Negocio activo.</td>
+                <td>19/05 09:15</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="miembro">Chu Vásquez, María</div>
+                  <div class="rol">Analista de Crédito</div>
+                </td>
+                <td>Vocal</td>
+                <td><span class="vote-badge pendiente">⌛ PENDIENTE</span></td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <form class="form-add-vote">
+            <div class="field">
+              <label>Tu Voto</label>
+              <select>
+                <option>Aprobado</option>
+                <option>Rechazado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Comentario</label>
+              <input type="text" placeholder="Fundamenta tu voto...">
+            </div>
+            <button type="button" class="btn btn-primary">Registrar</button>
+            <button type="button" class="btn btn-outline">Cancelar</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- 4. Resolución del Crédito -->
+      <div class="ed-card">
+        <div class="ed-header">
+          <div class="left">
+            <div class="num">4</div>
+            <div>
+              <h3>Resolución del Crédito</h3>
+              <div class="subt">Decisión ejecutiva final · Gerencia</div>
+            </div>
+          </div>
+          <span class="badge">✎ Acción requerida</span>
+        </div>
+        <div class="ed-body">
+
+          <div class="field" style="margin-bottom:6px;">
+            <label>Decisión Final <span class="req">*</span></label>
+          </div>
+          <div class="decision-buttons">
+            <button type="button" class="decision-btn decision-btn-aprobar selected">
+              ✓ APROBAR CRÉDITO
+            </button>
+            <button type="button" class="decision-btn decision-btn-rechazar">
+              ✗ RECHAZAR CRÉDITO
+            </button>
+          </div>
+
+          <div class="form-row cols-3">
+            <div class="field">
+              <label>Producto Crediticio <span class="req">*</span></label>
+              <select>
+                <option>Créditos Diarios — interés fijo</option>
+                <option>Campaña Escolar — Pagos Diarios</option>
+                <option>Capital de Trabajo MYPE</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Monto Aprobado <span class="req">*</span></label>
+              <div class="input-group">
+                <span class="prefix">S/</span>
+                <input type="number" value="5000">
+              </div>
+            </div>
+            <div class="field">
+              <label>Tasa Final (%) <span style="color:var(--gray-500);font-weight:400">Mensual</span></label>
+              <input type="number" value="2.5" step="0.1">
+            </div>
+          </div>
+
+          <div class="form-row cols-2">
+            <div class="field">
+              <label>N° Cuotas</label>
+              <input type="number" value="12">
+            </div>
+            <div class="field">
+              <label>Condiciones Especiales</label>
+              <input type="text" placeholder="Ej: Requiere aval...">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Comentario de la Resolución <span class="req">*</span></label>
+              <textarea rows="3">Cliente con flujo de caja sólido (excedente S/ 1,700/mes), historial NORMAL en buró y ratio cuota/disponible al 28.7%. Aprobado por unanimidad del comité.</textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer sticky -->
+      <div class="footer">
+        <button class="btn btn-outline">← Volver al listado</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline">Guardar borrador</button>
+          <button class="btn btn-primary">✓ Confirmar Resolución</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

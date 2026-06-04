@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo A · Cliente (tabs horizontales) — Reelige</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #F3F5F9; color: #1F2937; padding: 22px; }
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header { background: linear-gradient(135deg, #4f8ef5 0%, #1a4fc4 100%);
+    color: white; border-radius: 10px 10px 0 0; padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .icon { width: 38px; height: 38px; background: rgba(255,255,255,.18); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  .brand h1 { font-size: 18px; font-weight: 700; line-height: 1.1; }
+  .brand small { display: block; font-weight: 400; font-size: 11px; opacity: .85; }
+  .header .right { font-size: 13px; opacity: .9; text-align: right; }
+  .header .right strong { display: block; font-size: 15px; }
+  .header .badge-mode { background: #FEF3C7; color: #92400E; font-size: 11px; padding: 3px 10px;
+    border-radius: 12px; font-weight: 700; display: inline-block; margin-top: 4px; }
+
+  /* ── Tabs ── */
+  .tabs { background: white; border-bottom: 1px solid #E5E7EB; padding: 0 22px;
+    display: flex; gap: 0; overflow-x: auto; }
+  .tab { padding: 14px 18px; cursor: pointer; font-size: 13px; font-weight: 600;
+    color: #6B7280; border-bottom: 3px solid transparent; white-space: nowrap;
+    display: flex; align-items: center; gap: 8px; transition: all .15s; }
+  .tab:hover { color: #1F4788; }
+  .tab.active { color: #1F4788; border-bottom-color: #1F4788; background: #F8FAFD; }
+  .tab .num { width: 22px; height: 22px; border-radius: 50%; background: #E5E7EB; color: #6B7280;
+    font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+  .tab.active .num { background: #1F4788; color: white; }
+  .tab.done .num { background: #10B981; color: white; }
+
+  /* ── Body ── */
+  .body { background: white; padding: 28px 32px; min-height: 480px; border-radius: 0 0 10px 10px; }
+  .body h2 { font-size: 17px; color: #1F4788; margin-bottom: 4px; font-weight: 700; }
+  .body .desc { font-size: 12px; color: #6B7280; margin-bottom: 22px; }
+
+  .form-row { display: grid; gap: 14px; margin-bottom: 14px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .cols-2-1 { grid-template-columns: 2fr 1fr; }
+
+  .field label { display: block; font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; }
+  .field label .req { color: #DC2626; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 11px; font: inherit; font-size: 13px;
+    border: 1px solid #D1D5DB; border-radius: 6px; background: white; }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 2px solid #4f8ef5; outline-offset: -1px; border-color: #4f8ef5; }
+  .field .hint { font-size: 10px; color: #9CA3AF; margin-top: 3px; }
+
+  .subsec { font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase;
+    letter-spacing: .5px; margin: 18px 0 10px 0; padding-bottom: 5px; border-bottom: 1px solid #F3F4F6; }
+  .subsec:first-child { margin-top: 0; }
+
+  /* Pills */
+  .pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill-group label { padding: 7px 14px; border: 1px solid #D1D5DB; border-radius: 18px;
+    font-size: 12px; cursor: pointer; background: white; user-select: none; }
+  .pill-group input { display: none; }
+  .pill-group input:checked + label { background: #1F4788; color: white; border-color: #1F4788; }
+
+  /* Upload cards */
+  .uploads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .upload-card { border: 2px dashed #D1D5DB; border-radius: 8px; padding: 22px; text-align: center;
+    cursor: pointer; transition: all .15s; background: #FAFBFD; }
+  .upload-card:hover { border-color: #4f8ef5; background: #F0F6FF; }
+  .upload-card .ico { font-size: 30px; color: #9CA3AF; }
+  .upload-card .lbl { font-size: 13px; color: #374151; margin-top: 8px; font-weight: 600; }
+  .upload-card .hint { font-size: 11px; color: #9CA3AF; margin-top: 3px; }
+  .upload-card.has-file { border: 2px solid #10B981; background: #F0FDF4; }
+  .upload-card.has-file .ico { color: #10B981; }
+
+  /* Ref list */
+  .ref-row { background: #F8FAFD; padding: 10px; border-radius: 6px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr 2fr 1fr 36px; gap: 8px; align-items: end; }
+  .ref-row input { padding: 6px 8px; font-size: 12px; }
+  .btn-del { background: #FEE2E2; color: #DC2626; border: 0; padding: 6px 10px;
+    border-radius: 4px; cursor: pointer; }
+  .btn-add { background: white; color: #1F4788; border: 1px solid #1F4788; padding: 6px 14px;
+    border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  /* Footer */
+  .footer { background: white; border-top: 1px solid #E5E7EB; padding: 16px 24px; margin-top: 0;
+    border-radius: 0 0 10px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .progress { font-size: 12px; color: #6B7280; }
+  .progress b { color: #1F4788; }
+  .btn { padding: 9px 18px; border-radius: 6px; border: 0; font: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: .92; }
+  .btn-primary { background: #1F4788; color: white; }
+  .btn-secondary { background: white; color: #1F4788; border: 1px solid #1F4788; }
+  .btn-ghost { background: transparent; color: #6B7280; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="icon">🏛</div>
+      <div>
+        <h1>Reelige</h1>
+        <small>Sistema de Gestión Financiera</small>
+      </div>
+    </div>
+    <div class="right">
+      <strong>Registro de Cliente · DNI 45782931</strong>
+      <span>Analista: Pérez García, Juan · Agencia Lima Centro</span>
+      <span class="badge-mode">MODO EDICIÓN</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab done" onclick="goTab(1)"><span class="num">✓</span>Identidad</div>
+    <div class="tab done" onclick="goTab(2)"><span class="num">✓</span>Cónyuge y dependientes</div>
+    <div class="tab active" onclick="goTab(3)"><span class="num">3</span>Domicilio</div>
+    <div class="tab" onclick="goTab(4)"><span class="num">4</span>Referencias</div>
+    <div class="tab" onclick="goTab(5)"><span class="num">5</span>Situación económica</div>
+    <div class="tab" onclick="goTab(6)"><span class="num">6</span>Negocio</div>
+    <div class="tab" onclick="goTab(7)"><span class="num">7</span>Adjuntos</div>
+  </div>
+
+  <div class="body">
+
+    <!-- TAB 1: Identidad -->
+    <div class="tab-content" id="t1">
+      <h2>1 · Información de Identidad</h2>
+      <p class="desc">Datos personales del titular del crédito.</p>
+      <div class="form-row cols-3">
+        <div class="field"><label>Tipo documento <span class="req">*</span></label>
+          <select><option>DNI</option><option>RUC</option><option>Pasaporte</option><option>C.E.</option></select>
+        </div>
+        <div class="field"><label>Número de documento <span class="req">*</span></label><input value="45782931"></div>
+        <div class="field"><label>Fecha de nacimiento</label><input type="date" value="1985-04-12"></div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Apellido paterno <span class="req">*</span></label><input value="MOSQUERA"></div>
+        <div class="field"><label>Apellido materno <span class="req">*</span></label><input value="SACARIAS"></div>
+        <div class="field"><label>Nombres <span class="req">*</span></label><input value="Mirella"></div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Sexo</label>
+          <div class="pill-group">
+            <input type="radio" id="sx1" name="sx"><label for="sx1">Masculino</label>
+            <input type="radio" id="sx2" name="sx" checked><label for="sx2">Femenino</label>
+          </div>
+        </div>
+        <div class="field"><label>Estado civil <span class="req">*</span></label>
+          <select><option>Soltero(a)</option><option selected>Casado(a)</option><option>Conviviente</option><option>Viudo(a)</option><option>Divorciado(a)</option></select>
+        </div>
+        <div class="field"><label>Email</label><input value="mirella.mosquera@gmail.com"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Cónyuge y dependientes -->
+    <div class="tab-content" id="t2">
+      <h2>2 · Cónyuge y Dependientes</h2>
+      <p class="desc">Información del cónyuge e hijos a cargo (si aplica).</p>
+      <div class="form-row cols-2-1">
+        <div class="field"><label>Nombre completo del cónyuge</label><input value="Rodríguez Salas, Pedro"></div>
+        <div class="field"><label>DNI del cónyuge</label><input value="42118567"></div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>N° de hijos</label><input type="number" value="3"></div>
+        <div class="field"><label>Hijos estudiando</label><input type="number" value="2"></div>
+        <div class="field"><label>Total dependientes</label><input value="5"></div>
+      </div>
+      <div class="field">
+        <label>Nivel educativo (hijos)</label>
+        <div class="pill-group">
+          <input type="checkbox" id="ed1"><label for="ed1">Primaria</label>
+          <input type="checkbox" id="ed2" checked><label for="ed2">Secundaria</label>
+          <input type="checkbox" id="ed3"><label for="ed3">Técnica</label>
+          <input type="checkbox" id="ed4" checked><label for="ed4">Superior</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Domicilio (ACTIVO) -->
+    <div class="tab-content active" id="t3">
+      <h2>3 · Ubicación y Vivienda</h2>
+      <p class="desc">Dirección del domicilio principal y detalles de la vivienda.</p>
+
+      <div class="subsec">Dirección</div>
+      <div class="form-row cols-4">
+        <div class="field"><label>Tipo de zona</label>
+          <select><option>URB</option><option selected>AAHH</option><option>PPJJ</option><option>Coop. Vivienda</option><option>Conj. Hab.</option><option>Asoc. Comerc.</option></select>
+        </div>
+        <div class="field"><label>Nombre zona</label><input value="Las Lomas Sur"></div>
+        <div class="field"><label>Tipo de vía</label>
+          <select><option>Av.</option><option selected>Jr.</option><option>Calle</option><option>Pje.</option></select>
+        </div>
+        <div class="field"><label>Dirección + número <span class="req">*</span></label><input value="Las Begonias 245"></div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Departamento</label><input value="Lima"></div>
+        <div class="field"><label>Provincia</label><input value="Lima"></div>
+        <div class="field"><label>Distrito</label><input value="San Juan de Lurigancho"></div>
+      </div>
+
+      <div class="subsec">Detalles de la vivienda</div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Tenencia</label>
+          <div class="pill-group">
+            <input type="radio" id="t1" name="ten" checked><label for="t1">Propio</label>
+            <input type="radio" id="t2" name="ten"><label for="t2">Alquilado</label>
+            <input type="radio" id="t3" name="ten"><label for="t3">Familiares</label>
+            <input type="radio" id="t4" name="ten"><label for="t4">Ambulante</label>
+          </div>
+        </div>
+        <div class="field"><label>Tiempo de residencia</label>
+          <select><option>Menos de 1 año</option><option>1–3 años</option><option selected>3–5 años</option><option>Más de 5 años</option></select>
+        </div>
+        <div class="field"><label>Tipo de construcción</label>
+          <select><option selected>Material noble</option><option>Madera</option><option>Adobe</option><option>Mixto</option></select>
+        </div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Propietario (si alquila)</label><input placeholder="N/A si vivienda propia"></div>
+        <div class="field"><label>Teléfono del propietario</label><input placeholder="N/A si vivienda propia"></div>
+        <div class="field"><label>N° de suministro <span class="req">*</span></label><input value="0814578"></div>
+      </div>
+      <div class="field" style="margin-top: 8px;">
+        <label>Referencia / Croquis (texto)</label>
+        <textarea rows="2">Portón verde, frente al parque infantil del AAHH.</textarea>
+      </div>
+    </div>
+
+    <!-- TAB 4: Referencias -->
+    <div class="tab-content" id="t4">
+      <h2>4 · Referencias de Contacto <span class="req">*</span></h2>
+      <p class="desc">Mínimo 1 referencia. Recomendado al menos 2.</p>
+      <div class="ref-row">
+        <input value="Hermano">
+        <input value="Mosquera Sacarias, Luis">
+        <input value="987654321">
+        <button class="btn-del">🗑</button>
+      </div>
+      <div class="ref-row">
+        <input value="Vecino">
+        <input value="Quispe Mamani, Rosa">
+        <input value="912345678">
+        <button class="btn-del">🗑</button>
+      </div>
+      <button class="btn-add">+ Agregar referencia</button>
+    </div>
+
+    <!-- TAB 5: Situación Económica -->
+    <div class="tab-content" id="t5">
+      <h2>5 · Situación Económica</h2>
+      <p class="desc">Datos de empleo e ingresos del titular.</p>
+      <div class="form-row cols-3">
+        <div class="field"><label>Tipo de empleo</label>
+          <select><option>Dependiente</option><option selected>Independiente</option><option>Informal</option><option>Desempleado</option></select>
+        </div>
+        <div class="field"><label>Ocupación / Cargo <span class="req">*</span></label><input value="Comerciante"></div>
+        <div class="field"><label>Empresa donde labora</label><input placeholder="N/A si independiente"></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="field"><label style="color: #059669;">↑ Ingresos mensuales (S/) <span class="req">*</span></label>
+          <input type="number" value="3200" style="border-color: #6ee7b7;"></div>
+        <div class="field"><label style="color: #DC2626;">↓ Gastos mensuales (S/) <span class="req">*</span></label>
+          <input type="number" value="1500" style="border-color: #fca5a5;"></div>
+      </div>
+      <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 10px 14px; border-radius: 6px; margin-top: 8px;">
+        <small style="color: #15803D; font-weight: 600;">Excedente neto disponible: S/ 1,700.00</small>
+      </div>
+    </div>
+
+    <!-- TAB 6: Negocio -->
+    <div class="tab-content" id="t6">
+      <h2>6 · Negocio · Actividad Laboral</h2>
+      <p class="desc">Información del negocio del cliente (si aplica).</p>
+      <div class="form-row cols-4">
+        <div class="field"><label>Tipo de persona</label>
+          <select><option selected>Natural</option><option>Natural c/ RUC</option><option>Jurídica</option></select>
+        </div>
+        <div class="field"><label>Categoría</label>
+          <select><option selected>Comercial</option><option>Productivo</option><option>Servicio</option><option>Consumo</option></select>
+        </div>
+        <div class="field"><label>Antigüedad del negocio</label><input value="6 años"></div>
+        <div class="field"><label>RUC (si aplica)</label><input placeholder="—"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Giro del negocio</label><input value="Bodega · venta de abarrotes"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Dirección del negocio</label><input value="Mercado Las Lomas Pto. 142"></div>
+      </div>
+    </div>
+
+    <!-- TAB 7: Adjuntos -->
+    <div class="tab-content" id="t7">
+      <h2>7 · Adjuntos del Expediente</h2>
+      <p class="desc">Croquis y fotos para verificación in situ.</p>
+      <div class="uploads">
+        <div class="upload-card has-file">
+          <div class="ico">📍✓</div>
+          <div class="lbl">Croquis del negocio</div>
+          <div class="hint">croquis_negocio.jpg · 142 KB</div>
+        </div>
+        <div class="upload-card has-file">
+          <div class="ico">🏠✓</div>
+          <div class="lbl">Croquis del domicilio</div>
+          <div class="hint">croquis_casa.jpg · 98 KB</div>
+        </div>
+        <div class="upload-card">
+          <div class="ico">📷</div>
+          <div class="lbl">Foto fachada del negocio</div>
+          <div class="hint">Click para subir JPG/PNG</div>
+        </div>
+        <div class="upload-card">
+          <div class="ico">📷</div>
+          <div class="lbl">Foto fachada del domicilio</div>
+          <div class="hint">Click para subir JPG/PNG</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="progress">Sección <b>3</b> de <b>7</b> · 43 % completado</div>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn btn-ghost">← Volver al listado</button>
+      <button class="btn btn-secondary">💾 Guardar borrador</button>
+      <button class="btn btn-primary">Registrar Cliente</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function goTab(n) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('t' + n).classList.add('active');
+    document.querySelectorAll('.tab').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      if (i + 1 < n) el.classList.add('done');
+      else if (i + 1 === n) el.classList.add('active');
+      const num = el.querySelector('.num');
+      num.textContent = (i + 1 < n) ? '✓' : (i + 1);
+    });
+    document.querySelector('.progress').innerHTML =
+      `Sección <b>${n}</b> de <b>7</b> · ${Math.round(n/7 * 100)} % completado`;
+  }
+</script>
+</body>
+</html>

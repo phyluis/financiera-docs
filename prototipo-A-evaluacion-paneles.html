@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo A · Evaluación de Crédito (paneles colapsables) — Reelige</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #F3F5F9; color: #1F2937; padding: 24px; }
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  /* Header banner */
+  .header {
+    background: linear-gradient(135deg, #4f8ef5 0%, #1a4fc4 100%);
+    color: white; border-radius: 10px; padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px; box-shadow: 0 4px 12px rgba(31,71,136,.15);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .icon { width: 38px; height: 38px; background: rgba(255,255,255,.18); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  .brand h1 { font-size: 18px; font-weight: 700; line-height: 1.1; }
+  .brand small { display: block; font-weight: 400; font-size: 11px; opacity: .85; }
+  .header .right { font-size: 13px; opacity: .9; text-align: right; }
+  .header .right strong { display: block; font-size: 15px; }
+
+  /* Top bar context */
+  .context-bar {
+    background: white; border-radius: 10px; padding: 14px 20px; margin-bottom: 16px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .context-bar .item label { display: block; font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+  .context-bar .item span { font-size: 13px; font-weight: 600; color: #1F2937; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge.pendiente { background: #FEF3C7; color: #92400E; }
+  .badge.aprobado { background: #D1FAE5; color: #065F46; }
+
+  /* Panel (accordion) */
+  .panel { background: white; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.05); overflow: hidden; }
+  .panel-head {
+    padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px;
+    border-left: 4px solid #1F4788; user-select: none; background: white;
+    transition: background .15s;
+  }
+  .panel-head:hover { background: #FAFBFD; }
+  .panel-head .num { width: 26px; height: 26px; border-radius: 50%; background: #1F4788; color: white;
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .panel-head h3 { flex: 1; font-size: 14px; font-weight: 700; color: #1F2937; }
+  .panel-head .status { font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+  .status.ok { background: #D1FAE5; color: #065F46; }
+  .status.warn { background: #FEF3C7; color: #92400E; }
+  .status.empty { background: #F3F4F6; color: #6B7280; }
+  .panel-head .caret { font-size: 12px; color: #9CA3AF; transition: transform .2s; }
+  .panel.open .panel-head .caret { transform: rotate(90deg); }
+
+  .panel-body { padding: 18px 24px 22px 60px; display: none; border-top: 1px solid #F3F4F6; }
+  .panel.open .panel-body { display: block; }
+
+  /* Form grid */
+  .form-row { display: grid; gap: 14px; margin-bottom: 12px; }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .field label { display: block; font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; }
+  .field label .req { color: #DC2626; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 7px 10px; font: inherit; font-size: 13px;
+    border: 1px solid #D1D5DB; border-radius: 6px; background: white;
+  }
+  .field input:focus { outline: 2px solid #4f8ef5; outline-offset: -1px; border-color: #4f8ef5; }
+
+  /* Radio/checkbox pills */
+  .pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill-group label { padding: 6px 12px; border: 1px solid #D1D5DB; border-radius: 16px;
+    font-size: 12px; cursor: pointer; background: white; }
+  .pill-group input { display: none; }
+  .pill-group input:checked + label { background: #1F4788; color: white; border-color: #1F4788; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #F3F5F9; padding: 8px 10px; text-align: left; font-weight: 600; color: #4B5563; border-bottom: 1px solid #E5E7EB; }
+  td { padding: 6px 10px; border-bottom: 1px solid #F3F4F6; }
+  td input { width: 100%; padding: 4px 6px; border: 1px solid #E5E7EB; border-radius: 4px; font-size: 12px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .total-row { background: #FFFBEB; font-weight: 700; }
+  .total-row td { padding: 8px 10px; }
+
+  /* Section title inside panel */
+  .subsec { font-size: 12px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: .5px;
+    margin: 16px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #F3F4F6; }
+  .subsec:first-child { margin-top: 0; }
+
+  /* KPI cards (in dictamen) */
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .kpi { background: #F8FAFD; border: 1px solid #E5E7EB; padding: 10px 14px; border-radius: 6px; }
+  .kpi small { font-size: 10px; text-transform: uppercase; color: #6B7280; letter-spacing: .5px; }
+  .kpi strong { display: block; font-size: 17px; color: #1F4788; margin-top: 2px; }
+  .kpi.danger strong { color: #DC2626; }
+  .kpi.success strong { color: #059669; }
+
+  /* Adjuntos */
+  .uploads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .upload-card { border: 2px dashed #D1D5DB; border-radius: 8px; padding: 18px; text-align: center;
+    cursor: pointer; transition: all .15s; }
+  .upload-card:hover { border-color: #4f8ef5; background: #F0F6FF; }
+  .upload-card .ico { font-size: 22px; color: #9CA3AF; }
+  .upload-card .lbl { font-size: 12px; color: #4B5563; margin-top: 6px; font-weight: 600; }
+  .upload-card .hint { font-size: 10px; color: #9CA3AF; margin-top: 2px; }
+  .upload-card.has-file { border: 2px solid #10B981; background: #F0FDF4; }
+
+  /* Footer actions */
+  .actions { background: white; border-radius: 10px; padding: 14px 20px; margin-top: 14px;
+    display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .actions .left { display: flex; gap: 8px; }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 0; font: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .9; }
+  .btn-primary { background: #1F4788; color: white; }
+  .btn-secondary { background: white; color: #1F4788; border: 1px solid #1F4788; }
+  .btn-ghost { background: transparent; color: #6B7280; }
+
+  /* Conditional section warning */
+  .conditional-note { background: #EFF6FF; color: #1E40AF; padding: 8px 12px; border-radius: 6px;
+    font-size: 11px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ───── Header ───── -->
+  <div class="header">
+    <div class="brand">
+      <div class="icon">🏛</div>
+      <div>
+        <h1>Reelige</h1>
+        <small>Sistema de Gestión Financiera</small>
+      </div>
+    </div>
+    <div class="right">
+      <strong>Evaluación de Crédito · EXP-2026-0142</strong>
+      <span>Analista: Pérez García, Juan · Agencia Lima Centro</span>
+    </div>
+  </div>
+
+  <!-- ───── Context bar ───── -->
+  <div class="context-bar">
+    <div class="item"><label>Cliente</label><span>MOSQUERA SACARIAS, Mirella</span></div>
+    <div class="item"><label>DNI</label><span>45782931</span></div>
+    <div class="item"><label>Producto</label><span>Capital de Trabajo</span></div>
+    <div class="item"><label>Monto Solicitado</label><span>S/ 8,500.00</span></div>
+    <div class="item"><label>Estado</label><span class="badge pendiente">PENDIENTE</span></div>
+  </div>
+
+  <!-- ───── Panel 1: Ficha del Cliente ───── -->
+  <div class="panel open">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">1</div>
+      <h3>Ficha del Cliente</h3>
+      <span class="status warn">3 campos pendientes</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+
+      <div class="subsec">Datos personales del titular</div>
+      <div class="form-row cols-4">
+        <div class="field"><label>Apellido paterno <span class="req">*</span></label><input value="MOSQUERA"></div>
+        <div class="field"><label>Apellido materno <span class="req">*</span></label><input value="SACARIAS"></div>
+        <div class="field"><label>Nombres <span class="req">*</span></label><input value="Mirella"></div>
+        <div class="field"><label>Sexo</label>
+          <div class="pill-group">
+            <input type="radio" id="sx1" name="sx"><label for="sx1">M</label>
+            <input type="radio" id="sx2" name="sx" checked><label for="sx2">F</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-row cols-4">
+        <div class="field"><label>Tipo de documento</label>
+          <select><option>DNI</option><option>Carnet Ext.</option><option>Pasaporte</option><option>C.I.P.</option></select>
+        </div>
+        <div class="field"><label>Número documento <span class="req">*</span></label><input value="45782931"></div>
+        <div class="field"><label>Fecha nacimiento</label><input type="date" value="1985-04-12"></div>
+        <div class="field"><label>Estado civil <span class="req">*</span></label>
+          <select><option>Soltero(a)</option><option selected>Casado(a)</option><option>Conviviente</option><option>Viudo(a)</option><option>Divorciado(a)</option></select>
+        </div>
+      </div>
+
+      <div class="subsec">Cónyuge y dependientes</div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Nombre completo cónyuge</label><input value="Rodríguez Salas, Pedro"></div>
+        <div class="field"><label>DNI cónyuge</label><input value="42118567"></div>
+        <div class="field"><label>N° de hijos</label><input type="number" value="3"></div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Hijos estudiando</label><input type="number" value="2"></div>
+        <div class="field"><label>Nivel educativo (hijos)</label>
+          <div class="pill-group">
+            <input type="checkbox" id="ed1"><label for="ed1">Primaria</label>
+            <input type="checkbox" id="ed2" checked><label for="ed2">Secundaria</label>
+            <input type="checkbox" id="ed3"><label for="ed3">Técnica</label>
+            <input type="checkbox" id="ed4" checked><label for="ed4">Superior</label>
+          </div>
+        </div>
+        <div class="field"><label>Total dependientes</label><input value="5"></div>
+      </div>
+
+      <div class="subsec">Domicilio</div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Tipo de zona</label>
+          <select><option>URB</option><option selected>AAHH</option><option>PPJJ</option><option>Coop. Vivienda</option><option>Conj. Hab.</option></select>
+        </div>
+        <div class="field"><label>Nombre zona (AAHH/URB)</label><input value="AAHH Las Lomas Sur"></div>
+        <div class="field"><label>Tipo de vía</label>
+          <select><option>Av.</option><option selected>Jr.</option><option>Calle</option><option>Pje.</option></select>
+        </div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Dirección + número</label><input value="Jr. Las Begonias 245"></div>
+        <div class="field"><label>Distrito · Provincia</label><input value="San Juan de Lurigancho · Lima"></div>
+        <div class="field"><label>Tiempo de residencia</label>
+          <select><option>Menos de 1 año</option><option>1–3 años</option><option selected>3–5 años</option><option>Más de 5 años</option></select>
+        </div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Tenencia de vivienda</label>
+          <div class="pill-group">
+            <input type="radio" id="t1" name="ten" checked><label for="t1">Propio</label>
+            <input type="radio" id="t2" name="ten"><label for="t2">Alquilado</label>
+            <input type="radio" id="t3" name="ten"><label for="t3">Familiares</label>
+            <input type="radio" id="t4" name="ten"><label for="t4">Ambulante</label>
+          </div>
+        </div>
+        <div class="field"><label>Propietario (si alquila)</label><input placeholder="N/A"></div>
+        <div class="field"><label>Teléfono propietario</label><input placeholder="N/A"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ───── Panel 2: Negocio / Actividad ───── -->
+  <div class="panel">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">2</div>
+      <h3>Negocio · Actividad Laboral</h3>
+      <span class="status ok">Completo</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+      <div class="form-row cols-3">
+        <div class="field"><label>Tipo de persona</label>
+          <div class="pill-group">
+            <input type="radio" id="tp1" name="tp" checked><label for="tp1">Natural</label>
+            <input type="radio" id="tp2" name="tp"><label for="tp2">Natural c/ RUC</label>
+            <input type="radio" id="tp3" name="tp"><label for="tp3">Jurídica</label>
+          </div>
+        </div>
+        <div class="field"><label>Giro del negocio</label><input value="Bodega · venta de abarrotes"></div>
+        <div class="field"><label>Categoría</label>
+          <div class="pill-group">
+            <input type="radio" id="cat1" name="cat" checked><label for="cat1">Comercial</label>
+            <input type="radio" id="cat2" name="cat"><label for="cat2">Productivo</label>
+            <input type="radio" id="cat3" name="cat"><label for="cat3">Servicio</label>
+            <input type="radio" id="cat4" name="cat"><label for="cat4">Consumo</label>
+          </div>
+        </div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Dirección del negocio</label><input value="Mercado Las Lomas Pto. 142"></div>
+        <div class="field"><label>Antigüedad del negocio</label><input value="6 años"></div>
+        <div class="field"><label>RUC (si aplica)</label><input placeholder="—"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── Panel 3: Centrales de Riesgo ───── -->
+  <div class="panel">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">3</div>
+      <h3>Centrales de Riesgo</h3>
+      <span class="status ok">Completo</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+      <div class="form-row cols-4">
+        <div class="field"><label>Score crediticio <span class="req">*</span></label><input type="number" value="685"></div>
+        <div class="field"><label>Calificación buró <span class="req">*</span></label>
+          <select><option selected>NORMAL</option><option>CPP</option><option>Deficiente</option><option>Dudoso</option><option>Pérdida</option></select>
+        </div>
+        <div class="field"><label>Deuda total sistema <span class="req">*</span></label><input value="S/ 3,200.00"></div>
+        <div class="field"><label>Entidades con deuda <span class="req">*</span></label><input type="number" value="2"></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="field"><label>Línea disponible total</label><input value="S/ 4,500.00"></div>
+        <div class="field"><label>Última consulta SBS</label><input type="date" value="2026-05-10"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── Panel 4: Trabajo de Campo / Flujo de Caja ───── -->
+  <div class="panel">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">4</div>
+      <h3>Trabajo de Campo · Flujo de Caja del Negocio</h3>
+      <span class="status warn">Validar capacidad de pago</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+
+      <div class="subsec">Ingresos del negocio</div>
+      <table>
+        <thead><tr><th>Concepto</th><th>Frecuencia</th><th class="num">Monto unitario</th><th class="num">Veces/mes</th><th class="num">Mensual</th></tr></thead>
+        <tbody>
+          <tr><td>Ventas diarias</td><td>Diario</td><td class="num"><input value="380.00"></td><td class="num"><input value="26"></td><td class="num"><b>S/ 9,880.00</b></td></tr>
+          <tr><td>Ventas fines de semana</td><td>Semanal</td><td class="num"><input value="450.00"></td><td class="num"><input value="4"></td><td class="num"><b>S/ 1,800.00</b></td></tr>
+          <tr><td>Otros ingresos del hogar</td><td>Mensual</td><td class="num"><input value="1500.00"></td><td class="num"><input value="1"></td><td class="num"><b>S/ 1,500.00</b></td></tr>
+          <tr class="total-row"><td colspan="4">Total ingresos mensuales</td><td class="num">S/ 13,180.00</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subsec">Egresos del negocio</div>
+      <table>
+        <thead><tr><th>Concepto</th><th class="num">Monto mensual</th></tr></thead>
+        <tbody>
+          <tr><td>Compra de mercadería</td><td class="num"><input value="7800.00"></td></tr>
+          <tr><td>Alquiler del puesto</td><td class="num"><input value="450.00"></td></tr>
+          <tr><td>Servicios (luz, agua)</td><td class="num"><input value="180.00"></td></tr>
+          <tr><td>Transporte</td><td class="num"><input value="240.00"></td></tr>
+          <tr><td>Personal de apoyo</td><td class="num"><input value="0.00"></td></tr>
+          <tr class="total-row"><td>Total egresos del negocio</td><td class="num">S/ 8,670.00</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subsec">Egresos del hogar</div>
+      <table>
+        <thead><tr><th>Concepto</th><th class="num">Monto mensual</th></tr></thead>
+        <tbody>
+          <tr><td>Alimentación</td><td class="num"><input value="1200.00"></td></tr>
+          <tr><td>Servicios vivienda</td><td class="num"><input value="280.00"></td></tr>
+          <tr><td>Educación (hijos)</td><td class="num"><input value="650.00"></td></tr>
+          <tr><td>Otras deudas (cuota mensual)</td><td class="num"><input value="420.00"></td></tr>
+          <tr class="total-row"><td>Total egresos del hogar</td><td class="num">S/ 2,550.00</td></tr>
+        </tbody>
+      </table>
+
+      <div class="kpis" style="margin-top: 14px;">
+        <div class="kpi success"><small>Utilidad neta mensual</small><strong>S/ 1,960.00</strong></div>
+        <div class="kpi"><small>Cuota propuesta</small><strong>S/ 850.00</strong></div>
+        <div class="kpi success"><small>Ratio cuota/disponibilidad</small><strong>43.4 %</strong></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ───── Panel 5: Inventario ───── -->
+  <div class="panel">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">5</div>
+      <h3>Inventario / Mercadería</h3>
+      <span class="status warn">Sin registros</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+      <table>
+        <thead><tr><th>Producto</th><th>Unidad</th><th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Valor total</th></tr></thead>
+        <tbody>
+          <tr><td><input value="Arroz × saco 50kg"></td><td><input value="Saco"></td><td class="num"><input value="15"></td><td class="num"><input value="135.00"></td><td class="num"><b>S/ 2,025.00</b></td></tr>
+          <tr><td><input value="Aceite Primor 1L"></td><td><input value="Caja x12"></td><td class="num"><input value="8"></td><td class="num"><input value="95.00"></td><td class="num"><b>S/ 760.00</b></td></tr>
+          <tr><td><input value="Atún Florida 170g"></td><td><input value="Caja x48"></td><td class="num"><input value="5"></td><td class="num"><input value="180.00"></td><td class="num"><b>S/ 900.00</b></td></tr>
+          <tr><td><input placeholder="+ agregar producto"></td><td><input></td><td class="num"><input></td><td class="num"><input></td><td class="num">—</td></tr>
+          <tr class="total-row"><td colspan="4">Valor total del inventario</td><td class="num">S/ 3,685.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ───── Panel 6: Costos de Producción (CONDICIONAL) ───── -->
+  <div class="panel">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">6</div>
+      <h3>Costos de Producción <small style="font-weight: 400; color: #9CA3AF; margin-left: 6px;">(solo giro productivo)</small></h3>
+      <span class="status empty">No aplica · giro comercial</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+      <div class="conditional-note">
+        ℹ Este panel se activa cuando el giro del negocio es <b>Productivo</b> o <b>Agropecuario</b>.
+        Para giros comerciales/servicio se omite.
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── Panel 7: Adjuntos del expediente ───── -->
+  <div class="panel">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">7</div>
+      <h3>Adjuntos del Expediente</h3>
+      <span class="status warn">2 de 4 cargados</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+      <div class="uploads">
+        <div class="upload-card has-file">
+          <div class="ico">✓</div>
+          <div class="lbl">Croquis del negocio</div>
+          <div class="hint">croquis_negocio.jpg · 142KB</div>
+        </div>
+        <div class="upload-card has-file">
+          <div class="ico">✓</div>
+          <div class="lbl">Croquis del domicilio</div>
+          <div class="hint">croquis_casa.jpg · 98KB</div>
+        </div>
+        <div class="upload-card">
+          <div class="ico">📷</div>
+          <div class="lbl">Foto fachada del negocio</div>
+          <div class="hint">Subir imagen JPG/PNG</div>
+        </div>
+        <div class="upload-card">
+          <div class="ico">📷</div>
+          <div class="lbl">Foto fachada del domicilio</div>
+          <div class="hint">Subir imagen JPG/PNG</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── Panel 8: Dictamen del Analista ───── -->
+  <div class="panel">
+    <div class="panel-head" onclick="this.parentElement.classList.toggle('open')">
+      <div class="num">8</div>
+      <h3>Dictamen del Analista</h3>
+      <span class="status warn">Por completar</span>
+      <span class="caret">▶</span>
+    </div>
+    <div class="panel-body">
+      <div class="form-row cols-3">
+        <div class="field"><label>Monto aprobado <span class="req">*</span></label><input value="S/ 8,500.00"></div>
+        <div class="field"><label>Plazo (meses) <span class="req">*</span></label><input type="number" value="12"></div>
+        <div class="field"><label>Frecuencia</label>
+          <select><option>Diario</option><option>Semanal</option><option>Interdiario</option><option selected>Mensual</option><option>Grupal</option></select>
+        </div>
+      </div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Nivel de riesgo interno <span class="req">*</span></label>
+          <select><option>BAJO</option><option selected>MEDIO</option><option>ALTO</option></select>
+        </div>
+        <div class="field"><label>Estado evaluación <span class="req">*</span></label>
+          <select><option>PENDIENTE</option><option selected>APROBADO</option><option>RECHAZADO</option><option>DEVUELTO</option></select>
+        </div>
+        <div class="field"><label>Cuota proyectada</label><input value="S/ 850.00" readonly style="background:#F9FAFB"></div>
+      </div>
+      <div class="field" style="margin-top: 10px;">
+        <label>Observaciones del analista <span class="req">*</span></label>
+        <textarea rows="3" placeholder="Sustento del dictamen…">Cliente con flujo de caja sólido (S/ 1,960 disponible mensual), historial sin morosidad y vivienda propia. Se aprueba por el monto solicitado.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───── Footer actions ───── -->
+  <div class="actions">
+    <div class="left">
+      <button class="btn btn-ghost">← Volver</button>
+      <button class="btn btn-secondary">💾 Guardar borrador</button>
+    </div>
+    <div class="right">
+      <button class="btn btn-primary">Enviar a Comité →</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

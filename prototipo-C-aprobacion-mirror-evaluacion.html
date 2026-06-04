@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo C · Aprobación Crediticia — espejo de Evaluación</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+  /* ============================================================
+     Tokens copiados 1:1 del CSS de evaluacion-crediticia
+     (ui-form-rgevaluacion.css) — NO inventar valores.
+     ============================================================ */
+  :root {
+    --ck-brand:        #0f172a;
+    --ck-accent:       #2563eb;
+    --ck-accent-soft:  #eff6ff;
+    --ck-ok:           #059669;
+    --ck-ok-soft:      #ecfdf5;
+    --ck-warn:         #d97706;
+    --ck-warn-soft:    #fef3c7;
+    --ck-danger:       #dc2626;
+    --ck-danger-soft:  #fee2e2;
+    --ck-info-soft:    #e0f2fe;
+    --ck-ink:          #0f172a;
+    --ck-muted:        #64748b;
+    --ck-bg:           #f1f5f9;
+    --ck-border:       #e2e8f0;
+    --ck-panel:        #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--ck-bg);
+    color: var(--ck-ink);
+    padding: 16px;
+    font-size: 13.5px;
+  }
+  .container-shell { max-width: 1400px; margin: 0 auto; }
+
+  /* ── Shell del cockpit ──────────────────────────────────── */
+  .cockpit-shell {
+    background: var(--ck-bg);
+    color: var(--ck-ink);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--ck-border);
+  }
+
+  /* ── Cockpit head ───────────────────────────────────────── */
+  .cockpit-head {
+    background: var(--ck-brand);
+    color: #fff;
+    padding: .85rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .cockpit-head .exp-code {
+    font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+    background: rgba(255,255,255,.12);
+    padding: .4rem .75rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: .85rem;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .cockpit-head .exp-code i { margin-right: .25rem; }
+  .cockpit-head .cockpit-id { flex: 1; min-width: 240px; }
+  .cockpit-head .cockpit-id h1 { font-size: 1.05rem; font-weight: 600; line-height: 1.3; }
+  .cockpit-head .cockpit-id .sub { color: #94a3b8; font-size: .76rem; margin-top: .15rem; }
+  .cockpit-actions { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .btn { padding: .35rem .75rem; border-radius: 5px; border: 1px solid transparent; font-size: .8rem; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: .35rem; }
+  .btn-cockpit-ghost { background: transparent; border-color: rgba(255,255,255,.2); color: #fff; }
+  .btn-cockpit-ghost:hover { background: rgba(255,255,255,.1); }
+  .btn-cockpit-primary { background: var(--ck-accent); border-color: var(--ck-accent); color: #fff; font-weight: 600; }
+  .btn-cockpit-success { background: var(--ck-ok); border-color: var(--ck-ok); color: #fff; font-weight: 600; }
+
+  /* ── Pills ──────────────────────────────────────────────── */
+  .pill { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .65rem; border-radius: 999px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
+  .pill i { font-size: .85rem; }
+  .pill-comite { background: #ede9fe; color: #5b21b6; }
+  .pill-aprobado { background: var(--ck-ok-soft); color: var(--ck-ok); }
+  .pill-lock { background: rgba(255,255,255,.15); color: #cbd5e1; }
+
+  /* ── Stepper ────────────────────────────────────────────── */
+  .stepper {
+    background: #fff;
+    padding: .75rem 1.1rem;
+    border-bottom: 1px solid var(--ck-border);
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+  }
+  .step { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; padding: 0 1rem; position: relative; }
+  .step::after { content: ''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%); width: 20px; height: 1.5px; background: var(--ck-border); }
+  .step:last-child::after { display: none; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; color: var(--ck-muted); font-size: .72rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .step-label { font-size: .8rem; color: var(--ck-muted); }
+  .step.done .step-num { background: var(--ck-ok); color: #fff; }
+  .step.done .step-label { color: var(--ck-ink); font-weight: 500; }
+  .step.current .step-num { background: var(--ck-accent); color: #fff; box-shadow: 0 0 0 4px var(--ck-accent-soft); }
+  .step.current .step-label { color: var(--ck-accent); font-weight: 600; }
+
+  /* ── KPI strip ──────────────────────────────────────────── */
+  .kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); background: #fff; border-bottom: 1px solid var(--ck-border); }
+  .kpi { padding: .9rem 1rem; border-right: 1px solid var(--ck-border); }
+  .kpi:last-child { border-right: none; }
+  .kpi .lbl { font-size: .68rem; color: var(--ck-muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .kpi .val { font-size: 1.4rem; font-weight: 700; color: var(--ck-ink); line-height: 1.2; margin-top: .15rem; }
+  .kpi .val.val-text { font-size: 1rem; padding-top: .35rem; }
+  .kpi .hint { font-size: .7rem; color: var(--ck-muted); margin-top: .25rem; }
+  .kpi.ok .val { color: var(--ck-ok); }
+  .kpi.warn .val { color: var(--ck-warn); }
+  .kpi.danger .val { color: var(--ck-danger); }
+  .chip { display: inline-block; padding: .15rem .45rem; border-radius: 4px; font-size: .68rem; font-weight: 600; }
+  .chip.ok { background: var(--ck-ok-soft); color: var(--ck-ok); }
+  .chip.warn { background: var(--ck-warn-soft); color: var(--ck-warn); }
+  .chip.danger { background: var(--ck-danger-soft); color: var(--ck-danger); }
+
+  /* ── Grid de 3 columnas ─────────────────────────────────── */
+  .cockpit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .85rem; padding: .85rem; }
+
+  /* ── Panel ──────────────────────────────────────────────── */
+  .panel { background: var(--ck-panel); border: 1px solid var(--ck-border); border-radius: 8px; overflow: hidden; }
+  .panel-head {
+    padding: .65rem .85rem;
+    border-bottom: 1px solid var(--ck-border);
+    font-size: .78rem;
+    color: var(--ck-muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 600;
+    display: flex; align-items: center; gap: .4rem; justify-content: space-between;
+    background: #fafbfc;
+  }
+  .panel-head i { font-size: .9rem; }
+  .panel-body { padding: .9rem; }
+
+  /* ── Form labels ───────────────────────────────────────── */
+  .form-label { font-size: .72rem; color: var(--ck-muted); font-weight: 500; margin-bottom: .25rem; display: block; }
+  .form-control, .form-select { width: 100%; padding: .375rem .75rem; font-size: .85rem; border: 1px solid var(--ck-border); border-radius: 5px; background: #fff; color: var(--ck-ink); }
+  .form-control:focus, .form-select:focus { outline: none; border-color: var(--ck-accent); box-shadow: 0 0 0 2px var(--ck-accent-soft); }
+  .form-control[readonly] { background: #f8fafc; }
+  .input-group { display: flex; align-items: stretch; }
+  .input-group-text { padding: .375rem .75rem; font-size: .8rem; background: #f8fafc; border: 1px solid var(--ck-border); color: var(--ck-muted); }
+  .input-group-text:first-child { border-radius: 5px 0 0 5px; border-right: 0; }
+  .input-group-text:last-child  { border-radius: 0 5px 5px 0; border-left: 0; }
+  .input-group .form-control { border-radius: 0; }
+  .input-group .form-control:first-child { border-radius: 5px 0 0 5px; }
+  .input-group .form-control:last-child  { border-radius: 0 5px 5px 0; }
+  .req { color: var(--ck-danger); }
+  .hint { font-size: .7rem; color: var(--ck-muted); }
+
+  .row-g { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .row-g.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .row-g.cols-1 { grid-template-columns: 1fr; }
+  .mt-2 { margin-top: .5rem; }
+  .mt-3 { margin-top: .75rem; }
+  .mb-2 { margin-bottom: .5rem; }
+
+  /* ── Cliente block ──────────────────────────────────────── */
+  .client-block { background: var(--ck-accent-soft); border: 1px solid #dbeafe; border-radius: 6px; padding: .65rem .8rem; margin-bottom: 1rem; }
+  .client-block .client-name { font-weight: 600; font-size: .9rem; }
+  .client-block .client-meta { color: var(--ck-muted); font-size: .75rem; margin-top: .15rem; }
+
+  /* ── Tags ───────────────────────────────────────────────── */
+  .tag { display: inline-block; padding: .15rem .5rem; border-radius: 4px; font-size: .7rem; font-weight: 600; background: #f1f5f9; color: var(--ck-muted); }
+  .tag-ok { background: var(--ck-ok-soft); color: var(--ck-ok); }
+  .tag-warn { background: var(--ck-warn-soft); color: var(--ck-warn); }
+  .tag-danger { background: var(--ck-danger-soft); color: var(--ck-danger); }
+  .tag-info { background: var(--ck-accent-soft); color: var(--ck-accent); }
+
+  /* ── Read-only field — replica el estilo de input pero plano ── */
+  .ro-field { padding: .375rem .75rem; font-size: .85rem; background: #f8fafc; border: 1px solid var(--ck-border); border-radius: 5px; color: var(--ck-ink); min-height: 31px; }
+  .ro-field.muted { color: var(--ck-muted); font-style: italic; }
+  .ro-strong { font-weight: 700; }
+
+  /* ── Ratio bar (igual que evaluación) ───────────────────── */
+  .ratio-bar-labels { display: flex; justify-content: space-between; font-size: .65rem; margin-top: .35rem; }
+  .ratio-bar-track { position: relative; height: 6px; background: var(--ck-border); border-radius: 3px; overflow: hidden; margin-top: .15rem; }
+  .ratio-bar-fill { position: absolute; left: 0; top: 0; height: 100%; }
+  .ratio-fill-ok { background: var(--ck-ok); }
+  .ratio-fill-warning { background: var(--ck-warn); }
+  .ratio-fill-danger { background: var(--ck-danger); }
+
+  /* ── Normalizado a mensual (igual que evaluación) ───────── */
+  .nm-panel { background: #fafbfc; border: 1px solid var(--ck-border); border-radius: 6px; padding: .65rem .8rem; margin-top: .75rem; }
+  .nm-title { font-size: .7rem; font-weight: 600; color: var(--ck-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: .35rem; }
+  .nm-row { display: flex; justify-content: space-between; font-size: .76rem; padding: .15rem 0; }
+  .nm-row .nm-label { color: var(--ck-muted); }
+  .nm-row strong { color: var(--ck-ink); }
+  .nm-divider { height: 1px; background: var(--ck-border); margin: .35rem 0; }
+
+  /* ── Dictamen cards (igual que evaluación) ──────────────── */
+  .dictamen-cards { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .dictamen-card { border: 2px solid var(--ck-border); border-radius: 6px; padding: .85rem .5rem; text-align: center; cursor: pointer; background: #fff; transition: all .15s; }
+  .dictamen-card i { font-size: 1.5rem; display: block; margin-bottom: .25rem; color: var(--ck-muted); }
+  .dictamen-card span { font-size: .8rem; font-weight: 600; color: var(--ck-ink); }
+  .dictamen-card.selected { border-color: var(--ck-ok); background: var(--ck-ok-soft); }
+  .dictamen-card.selected i, .dictamen-card.selected span { color: var(--ck-ok); }
+  .dictamen-card.rechazar.selected { border-color: var(--ck-danger); background: var(--ck-danger-soft); }
+  .dictamen-card.rechazar.selected i, .dictamen-card.rechazar.selected span { color: var(--ck-danger); }
+  .dictamen-card.disabled-card { opacity: .5; cursor: not-allowed; }
+
+  /* ── Audit block ────────────────────────────────────────── */
+  .audit-block { border-top: 1px solid var(--ck-border); font-size: .72rem; color: var(--ck-muted); line-height: 1.6; padding-top: .75rem; margin-top: .75rem; }
+  .audit-block i { margin-right: .25rem; }
+
+  /* ── Collapsibles ───────────────────────────────────────── */
+  .collapsible { background: #fff; border: 1px solid var(--ck-border); border-radius: 8px; margin: 0 .85rem .85rem; }
+  .collapsible-head { padding: .75rem 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 600; font-size: .88rem; cursor: pointer; }
+  .collapsible-body { padding: 1rem; border-top: 1px solid var(--ck-border); }
+
+  /* Tabla densa */
+  .tbl-dense { width: 100%; font-size: .78rem; border-collapse: collapse; }
+  .tbl-dense th { background: #f8fafc; padding: .45rem .6rem; font-weight: 600; color: var(--ck-muted); text-transform: uppercase; letter-spacing: .03em; font-size: .7rem; border-bottom: 1px solid var(--ck-border); text-align: left; }
+  .tbl-dense td { padding: .45rem .6rem; border-bottom: 1px solid #f1f5f9; }
+  .tbl-dense tfoot td { border-top: 2px solid var(--ck-border); font-weight: 700; background: #f8fafc; }
+  .tbl-dense td.num, .tbl-dense th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tbl-dense td.ctr, .tbl-dense th.ctr { text-align: center; }
+
+  /* ── Comité - miembros list ─────────────────────────────── */
+  .miembros-list { border: 1px solid var(--ck-border); border-radius: 6px; overflow: hidden; }
+  .miembro-row { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: center; padding: .45rem .65rem; border-bottom: 1px solid var(--ck-border); }
+  .miembro-row:last-child { border-bottom: none; }
+  .miembro-row .nombre { font-size: .8rem; font-weight: 600; }
+  .miembro-row .rol { font-size: .7rem; color: var(--ck-muted); }
+  .voto-pill { padding: .15rem .5rem; border-radius: 4px; font-size: .68rem; font-weight: 600; }
+  .voto-pill.aprueba { background: var(--ck-ok-soft); color: var(--ck-ok); }
+  .voto-pill.rechaza { background: var(--ck-danger-soft); color: var(--ck-danger); }
+
+  /* ── Política aplicada — chip ───────────────────────────── */
+  .politica-chip {
+    background: var(--ck-accent-soft); color: var(--ck-accent);
+    padding: .35rem .6rem; border-radius: 5px; font-size: .72rem;
+    display: inline-flex; align-items: center; gap: .35rem;
+  }
+</style>
+</head>
+<body>
+<div class="container-shell">
+
+  <!-- ═══════════════════════════════════════════════════════
+       SHELL — toda la pantalla es UN cockpit card
+       (igual que evaluación-crediticia)
+       ═══════════════════════════════════════════════════════ -->
+  <div class="cockpit-shell">
+
+    <!-- ─── COCKPIT HEAD (dark navy) ─── -->
+    <div class="cockpit-head">
+      <span class="exp-code"><i class="bi bi-hash"></i>EXP-2026-00002</span>
+      <div class="cockpit-id">
+        <h1>PEREZ ROJAS, Juan Carlos</h1>
+        <div class="sub">DNI 45122356 · PILCOMAYO – HUANCAYO · Analista: OCHOA AMELO · Agencia Pilcomayo</div>
+      </div>
+      <div class="cockpit-actions">
+        <span class="pill pill-comite"><i class="bi bi-people-fill"></i> En Comité</span>
+        <button class="btn btn-cockpit-ghost"><i class="bi bi-arrow-counterclockwise"></i> Regresar</button>
+        <button class="btn btn-cockpit-success"><i class="bi bi-shield-check"></i> Emitir Resolución</button>
+      </div>
+    </div>
+
+    <!-- ─── STEPPER ─── -->
+    <div class="stepper">
+      <div class="step done"><div class="step-num">✓</div><div class="step-label">Borrador</div></div>
+      <div class="step done"><div class="step-num">✓</div><div class="step-label">Pendiente</div></div>
+      <div class="step current"><div class="step-num">3</div><div class="step-label">En Comité</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-label">Aprobado</div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-label">Desembolsado</div></div>
+    </div>
+
+    <!-- ─── KPI STRIP ─── -->
+    <div class="kpi-strip">
+      <div class="kpi">
+        <div class="lbl">Monto Solicitado</div>
+        <div class="val">S/ 100</div>
+        <div class="hint">Rango 150 — 300</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Cuota Est. / día</div>
+        <div class="val">S/ 21.00</div>
+        <div class="hint">≈ S/ 630.00/mes · 5 cuotas</div>
+      </div>
+      <div class="kpi danger">
+        <div class="lbl">Ratio Endeud.</div>
+        <div class="val">60.5%</div>
+        <div class="hint"><span class="chip danger">Excede límite</span></div>
+      </div>
+      <div class="kpi ok">
+        <div class="lbl">Score Crediticio</div>
+        <div class="val">888</div>
+        <div class="hint"><span class="chip ok">Excelente</span></div>
+      </div>
+      <div class="kpi ok">
+        <div class="lbl">Calif. Buró</div>
+        <div class="val val-text">NORMAL</div>
+        <div class="hint">0 entidades · S/ 0</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Estado</div>
+        <div class="val val-text"><span class="tag tag-info">EN COMITÉ</span></div>
+        <div class="hint">Esperando resolución</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         GRID 3 COLUMNAS — secciones 1 + 2 + Dictamen analista (RO)
+         ═══════════════════════════════════════════════════════ -->
+    <div class="cockpit-grid">
+
+      <!-- ═════ COL 1: Cliente & Solicitud (RO) ═════ -->
+      <div class="panel">
+        <div class="panel-head">
+          <span><i class="bi bi-person-badge"></i> 1. Cliente &amp; Solicitud</span>
+          <span class="tag"><i class="bi bi-lock"></i> Solo lectura</span>
+        </div>
+        <div class="panel-body">
+
+          <div class="client-block">
+            <div class="client-name">PEREZ ROJAS, Juan Carlos</div>
+            <div class="client-meta">DNI 45122356 · PILCOMAYO - HUANCAYO</div>
+          </div>
+
+          <div class="row-g cols-1">
+            <div>
+              <label class="form-label"><i class="bi bi-box-seam" style="color:var(--ck-accent);"></i> Producto Crediticio</label>
+              <div class="ro-field">Campaña escolar Pagos Diarios</div>
+              <div class="mt-2">
+                <span class="tag tag-info">Simple — Interés flat</span>
+                <span class="tag tag-info">Diario</span>
+                <span class="tag">Tasa base 5%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row-g mt-3">
+            <div>
+              <label class="form-label">Monto Solicitado</label>
+              <div class="input-group">
+                <span class="input-group-text">S/</span>
+                <div class="ro-field ro-strong" style="flex:1; border-radius:0 5px 5px 0;">100.00</div>
+              </div>
+              <div class="hint mt-2">S/ 150 — S/ 300</div>
+            </div>
+            <div>
+              <label class="form-label">N° Cuotas</label>
+              <div class="ro-field ro-strong">5</div>
+              <div class="hint mt-2">5 — 10</div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label">Tasa de Interés (%)</label>
+            <div class="input-group">
+              <div class="ro-field" style="flex:1;">5.00</div>
+              <span class="input-group-text">%</span>
+            </div>
+            <div class="hint mt-2">5% — 7%</div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label">Propósito del Préstamo</label>
+            <div class="ro-field" style="min-height: 50px;">csadfdas</div>
+          </div>
+
+          <div class="row-g mt-3">
+            <div>
+              <label class="form-label">Modalidad de Crédito</label>
+              <div><span class="tag tag-info"><i class="bi bi-diagram-2"></i> Paralelo</span></div>
+            </div>
+            <div>
+              <label class="form-label">Tipo de Operación</label>
+              <div><span class="tag tag-info">Nuevo</span></div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label"><i class="bi bi-shield-lock" style="color:var(--ck-accent);"></i> Bienes en Garantía</label>
+            <div class="ro-field muted">Sin bienes registrados</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═════ COL 2: Capacidad + Buró (RO) ═════ -->
+      <div>
+        <!-- Capacidad de Pago -->
+        <div class="panel" style="margin-bottom:.85rem;">
+          <div class="panel-head">
+            <span><i class="bi bi-cash-coin"></i> 2. Capacidad de Pago</span>
+            <span class="tag"><i class="bi bi-lock"></i> Solo lectura</span>
+          </div>
+          <div class="panel-body">
+            <div class="row-g mb-2">
+              <div>
+                <label class="form-label" style="color:var(--ck-ok);">Ingresos Diario</label>
+                <div class="input-group"><span class="input-group-text">S/</span>
+                  <div class="ro-field ro-strong" style="flex:1; border-radius:0 5px 5px 0;">200.00</div>
+                </div>
+              </div>
+              <div>
+                <label class="form-label" style="color:var(--ck-danger);">Gastos Diario</label>
+                <div class="input-group"><span class="input-group-text">S/</span>
+                  <div class="ro-field ro-strong" style="flex:1; border-radius:0 5px 5px 0;">100.00</div>
+                </div>
+              </div>
+            </div>
+            <div class="row-g cols-3">
+              <div>
+                <label class="form-label">Cuota Est. / día</label>
+                <div class="ro-field">21.00</div>
+              </div>
+              <div>
+                <label class="form-label">Disponible</label>
+                <div class="ro-field">79.00</div>
+              </div>
+              <div>
+                <label class="form-label">Ratio %</label>
+                <div class="ro-field ro-strong" style="color:var(--ck-danger);">60.50</div>
+              </div>
+            </div>
+
+            <div class="ratio-bar-labels mt-3">
+              <span style="color:var(--ck-muted);">0%</span>
+              <span style="color:var(--ck-ok); font-weight:600;">30% Óptimo</span>
+              <span style="color:var(--ck-warn); font-weight:600;">40% Límite</span>
+              <span style="color:var(--ck-danger); font-weight:600;">100%</span>
+            </div>
+            <div class="ratio-bar-track">
+              <div class="ratio-bar-fill ratio-fill-danger" style="width:60.5%;"></div>
+            </div>
+
+            <!-- Normalizado a mensual (como evaluación) -->
+            <div class="nm-panel">
+              <div class="nm-title"><i class="bi bi-database me-1"></i> Normalizado a mensual</div>
+              <div class="nm-row"><span class="nm-label" style="color:var(--ck-ok);">Ingresos mensual</span>
+                <span>200.00 × 30 = <strong>6,000.00</strong></span></div>
+              <div class="nm-row"><span class="nm-label" style="color:var(--ck-danger);">Gastos mensual</span>
+                <span>100.00 × 30 = <strong>3,000.00</strong></span></div>
+              <div class="nm-divider"></div>
+              <div class="nm-row"><span class="nm-label">Cuota × cuotas</span>
+                <span>21.00 × 5 = <strong>105.00</strong></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Centrales de Riesgo -->
+        <div class="panel">
+          <div class="panel-head">
+            <span><i class="bi bi-shield-exclamation"></i> Centrales de Riesgo</span>
+            <span class="tag"><i class="bi bi-lock"></i> Solo lectura</span>
+          </div>
+          <div class="panel-body">
+            <div class="row-g">
+              <div>
+                <label class="form-label">Score Crediticio</label>
+                <div class="ro-field ro-strong">888</div>
+              </div>
+              <div>
+                <label class="form-label">Calificación Buró</label>
+                <div class="ro-field">NORMAL</div>
+              </div>
+              <div>
+                <label class="form-label">Deuda en Sistema</label>
+                <div class="input-group"><span class="input-group-text">S/</span>
+                  <div class="ro-field" style="flex:1; border-radius:0 5px 5px 0;">0.00</div>
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Entidades</label>
+                <div class="ro-field">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═════ COL 3: Dictamen del Analista (RO) ═════ -->
+      <div class="panel">
+        <div class="panel-head">
+          <span><i class="bi bi-clipboard-check"></i> Dictamen del Analista</span>
+          <span class="tag"><i class="bi bi-lock"></i> Solo lectura</span>
+        </div>
+        <div class="panel-body">
+
+          <label class="form-label">Estado de Evaluación</label>
+          <div class="dictamen-cards mb-2">
+            <div class="dictamen-card selected">
+              <i class="bi bi-check-circle-fill"></i><span>APROBADO</span>
+            </div>
+            <div class="dictamen-card disabled-card">
+              <i class="bi bi-hourglass-split"></i><span>PENDIENTE</span>
+            </div>
+          </div>
+
+          <div class="row-g mt-3">
+            <div>
+              <label class="form-label">Monto Aprobado</label>
+              <div class="input-group">
+                <span class="input-group-text">S/</span>
+                <div class="ro-field ro-strong" style="flex:1; border-radius:0 5px 5px 0;">100.00</div>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Riesgo</label>
+              <div><span class="tag tag-warn">⚠ MEDIO</span></div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label">Observaciones del Analista</label>
+            <div class="ro-field" style="min-height: 80px;">pendiendo</div>
+          </div>
+
+          <div class="audit-block">
+            <div><i class="bi bi-clock"></i> Creado por <strong>analista1.pil</strong> · 20/05/2026 21:36</div>
+            <div><i class="bi bi-pencil"></i> Última modificación: analista1.pil</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         GRID 2 COLUMNAS — secciones 3 + 4 (EDITABLES por comité)
+         Misma línea gráfica: panels idénticos, sin colores extra
+         ═══════════════════════════════════════════════════════ -->
+    <div class="cockpit-grid" style="grid-template-columns: 1fr 1fr;">
+
+      <!-- 3. Comité de Crédito (EDITABLE) -->
+      <div class="panel">
+        <div class="panel-head">
+          <span><i class="bi bi-people-fill"></i> 3. Comité de Crédito</span>
+          <span class="tag tag-warn"><i class="bi bi-pencil"></i> Editable</span>
+        </div>
+        <div class="panel-body">
+
+          <label class="form-label">Presidente del Comité <span class="req">*</span></label>
+          <input class="form-control" value="MUÑOZ TORRES, Carla — Gerente de Agencia">
+
+          <label class="form-label mt-3">Integrantes y Votación</label>
+          <div class="miembros-list">
+            <div class="miembro-row">
+              <div>
+                <div class="nombre">MUÑOZ TORRES, Carla</div>
+                <div class="rol">Gerente de Agencia</div>
+              </div>
+              <span class="voto-pill aprueba">✓ Aprueba</span>
+            </div>
+            <div class="miembro-row">
+              <div>
+                <div class="nombre">VARGAS LEÓN, Ricardo</div>
+                <div class="rol">Supervisor de Crédito</div>
+              </div>
+              <span class="voto-pill aprueba">✓ Aprueba</span>
+            </div>
+            <div class="miembro-row">
+              <div>
+                <div class="nombre">OCHOA AMELO, María</div>
+                <div class="rol">Analista (autor)</div>
+              </div>
+              <span class="voto-pill aprueba">✓ Aprueba</span>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label">Acta del Comité</label>
+            <textarea class="form-control" rows="3" placeholder="Notas relevantes de la sesión, condicionantes acordadas...">Se aprueba con monto del analista. Cliente con buen historial crediticio.</textarea>
+          </div>
+
+          <div class="row-g mt-3">
+            <div>
+              <label class="form-label">Fecha de Sesión</label>
+              <input class="form-control" value="22/05/2026">
+            </div>
+            <div>
+              <label class="form-label">N° Acta</label>
+              <input class="form-control" value="ACT-2026-0017">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Resolución del Crédito (EDITABLE) -->
+      <div class="panel">
+        <div class="panel-head">
+          <span><i class="bi bi-shield-check"></i> 4. Resolución del Crédito</span>
+          <span class="tag tag-warn"><i class="bi bi-pencil"></i> Editable</span>
+        </div>
+        <div class="panel-body">
+
+          <label class="form-label">Decisión Final <span class="req">*</span></label>
+          <div class="dictamen-cards mb-2">
+            <div class="dictamen-card selected">
+              <i class="bi bi-check-circle-fill"></i><span>APROBAR</span>
+            </div>
+            <div class="dictamen-card rechazar">
+              <i class="bi bi-x-circle-fill"></i><span>RECHAZAR</span>
+            </div>
+          </div>
+
+          <div class="row-g mt-3">
+            <div>
+              <label class="form-label">Monto Final <span class="req">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">S/</span>
+                <input class="form-control" value="100.00" style="font-weight:700;">
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Tasa Final <span class="req">*</span></label>
+              <div class="input-group">
+                <input class="form-control" value="5.00">
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label">Plazo Final (cuotas) <span class="req">*</span></label>
+            <input class="form-control" value="5" style="max-width:140px;">
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label">Condicionantes / Observaciones del Comité</label>
+            <textarea class="form-control" rows="3" placeholder="Detalle de condiciones especiales, garantías adicionales requeridas, etc.">Cliente debe presentar copia actualizada del DNI al momento del desembolso.</textarea>
+          </div>
+
+          <div class="audit-block">
+            <i class="bi bi-shield-fill-check" style="color:var(--ck-ok);"></i> Política aplicada en este expediente:
+            <span class="politica-chip" style="margin-left:.35rem;">
+              <i class="bi bi-calculator"></i> HALF_UP · 2 decimales
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ─── CRONOGRAMA (colapsable, mismo formato que evaluación) ─── -->
+    <div class="collapsible">
+      <div class="collapsible-head">
+        <span>
+          <i class="bi bi-table" style="color:var(--ck-accent);"></i> Cronograma de Pagos
+          <span class="tag tag-info" style="margin-left:.35rem;">5 cuotas</span>
+          <span class="tag" style="margin-left:.15rem;">Diario</span>
+        </span>
+        <i class="bi bi-chevron-up"></i>
+      </div>
+      <div class="collapsible-body">
+        <table class="tbl-dense">
+          <thead>
+            <tr>
+              <th class="ctr">#</th>
+              <th>Vencimiento</th>
+              <th class="num">Saldo Inic.</th>
+              <th class="num">Amort.</th>
+              <th class="num">Interés</th>
+              <th class="num">Cuota</th>
+              <th class="num">Saldo Final</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="ctr ro-strong">1</td><td>23/05/26</td><td class="num">100.00</td><td class="num">20.00</td><td class="num">1.00</td><td class="num ro-strong">21.00</td><td class="num">80.00</td></tr>
+            <tr><td class="ctr ro-strong">2</td><td>24/05/26</td><td class="num">80.00</td><td class="num">20.00</td><td class="num">1.00</td><td class="num ro-strong">21.00</td><td class="num">60.00</td></tr>
+            <tr><td class="ctr ro-strong">3</td><td>25/05/26</td><td class="num">60.00</td><td class="num">20.00</td><td class="num">1.00</td><td class="num ro-strong">21.00</td><td class="num">40.00</td></tr>
+            <tr><td class="ctr ro-strong">4</td><td>26/05/26</td><td class="num">40.00</td><td class="num">20.00</td><td class="num">1.00</td><td class="num ro-strong">21.00</td><td class="num">20.00</td></tr>
+            <tr><td class="ctr ro-strong">5</td><td>27/05/26</td><td class="num">20.00</td><td class="num">20.00</td><td class="num">1.00</td><td class="num ro-strong">21.00</td><td class="num">0.00</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="3">Totales</td><td class="num">100.00</td><td class="num">5.00</td><td class="num">105.00</td><td></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

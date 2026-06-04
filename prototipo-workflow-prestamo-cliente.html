@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo · Workflow de Préstamo por Cliente — Reelige</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+  /* ============================================================
+     Tokens copiados 1:1 del CSS de evaluación-crediticia
+     ============================================================ */
+  :root {
+    --ck-brand:        #0f172a;
+    --ck-accent:       #2563eb;
+    --ck-accent-soft:  #eff6ff;
+    --ck-ok:           #059669;
+    --ck-ok-soft:      #ecfdf5;
+    --ck-warn:         #d97706;
+    --ck-warn-soft:    #fef3c7;
+    --ck-danger:       #dc2626;
+    --ck-danger-soft:  #fee2e2;
+    --ck-info-soft:    #e0f2fe;
+    --ck-ink:          #0f172a;
+    --ck-muted:        #64748b;
+    --ck-bg:           #f1f5f9;
+    --ck-border:       #e2e8f0;
+    --ck-panel:        #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--ck-bg);
+    color: var(--ck-ink);
+    padding: 18px;
+    font-size: 13.5px;
+  }
+  .container-shell { max-width: 1400px; margin: 0 auto; }
+
+  .cockpit-shell {
+    background: var(--ck-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--ck-border);
+  }
+
+  /* ── Cockpit head (dark) ────────────────────────────────── */
+  .cockpit-head {
+    background: var(--ck-brand);
+    color: #fff;
+    padding: .85rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .cockpit-head .icon-page {
+    width: 36px; height: 36px;
+    background: rgba(37,99,235,.2);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    color: #93c5fd;
+  }
+  .cockpit-head .titles { flex: 0 1 auto; }
+  .cockpit-head .titles h1 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .cockpit-head .titles .sub { color: #94a3b8; font-size: .76rem; margin-top: .15rem; }
+
+  /* Search box dentro del header */
+  .search-box {
+    flex: 1;
+    min-width: 280px;
+    position: relative;
+  }
+  .search-box i.search-icon {
+    position: absolute;
+    left: .75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: .95rem;
+  }
+  .search-box input {
+    width: 100%;
+    padding: .55rem .75rem .55rem 2.1rem;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 6px;
+    color: #fff;
+    font-size: .85rem;
+  }
+  .search-box input::placeholder { color: #94a3b8; }
+  .search-box input:focus {
+    outline: none;
+    background: rgba(255,255,255,.12);
+    border-color: var(--ck-accent);
+  }
+  .search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--ck-border);
+    border-radius: 6px;
+    margin-top: .25rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    z-index: 10;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .search-result-item {
+    padding: .55rem .75rem;
+    color: var(--ck-ink);
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+  }
+  .search-result-item:hover { background: var(--ck-accent-soft); }
+  .search-result-item .nombre { font-size: .85rem; font-weight: 600; }
+  .search-result-item .dni { font-size: .72rem; color: var(--ck-muted); }
+
+  /* ── Cliente card destacado ─────────────────────────────── */
+  .cliente-banner {
+    background: linear-gradient(135deg, var(--ck-accent-soft) 0%, #fafbfc 100%);
+    border-bottom: 1px solid var(--ck-border);
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+  .cliente-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--ck-accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .cliente-info .nombre {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ck-ink);
+  }
+  .cliente-info .meta {
+    font-size: .8rem;
+    color: var(--ck-muted);
+    margin-top: .15rem;
+  }
+  .cliente-info .meta strong { color: var(--ck-ink); font-weight: 600; }
+  .cliente-stats {
+    display: flex;
+    gap: 1rem;
+    text-align: right;
+  }
+  .cliente-stat .num {
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .cliente-stat .lbl {
+    font-size: .65rem;
+    color: var(--ck-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 600;
+    margin-top: .25rem;
+  }
+  .cliente-stat .num.text-success { color: var(--ck-ok); }
+  .cliente-stat .num.text-warn { color: var(--ck-warn); }
+
+  /* ── KPI strip resumen del cliente ──────────────────────── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: #fff;
+    border-bottom: 1px solid var(--ck-border);
+  }
+  .kpi {
+    padding: .9rem 1rem;
+    border-right: 1px solid var(--ck-border);
+  }
+  .kpi:last-child { border-right: none; }
+  .kpi .lbl {
+    font-size: .68rem;
+    color: var(--ck-muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 600;
+  }
+  .kpi .val {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ck-ink);
+    line-height: 1.2;
+    margin-top: .15rem;
+  }
+  .kpi .hint { font-size: .7rem; color: var(--ck-muted); margin-top: .25rem; }
+  .kpi.ok .val { color: var(--ck-ok); }
+  .kpi.warn .val { color: var(--ck-warn); }
+  .kpi.danger .val { color: var(--ck-danger); }
+
+  /* ── Lista de préstamos del cliente ─────────────────────── */
+  .prestamos-list {
+    padding: .85rem;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+  }
+  .prestamo-card {
+    background: #fff;
+    border: 1px solid var(--ck-border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: box-shadow .15s;
+  }
+  .prestamo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .prestamo-card.expanded { border-color: var(--ck-accent); box-shadow: 0 4px 12px rgba(37,99,235,.1); }
+  .prestamo-card-head {
+    padding: .85rem 1.1rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 1rem;
+    align-items: center;
+    cursor: pointer;
+    background: #fff;
+  }
+  .prestamo-card-head:hover { background: #fafbfc; }
+  .prestamo-card.expanded .prestamo-card-head { background: #fafbfc; }
+  .prestamo-code {
+    font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+    background: #f1f5f9;
+    color: var(--ck-ink);
+    padding: .35rem .65rem;
+    border-radius: 5px;
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  .prestamo-info .producto {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--ck-ink);
+  }
+  .prestamo-info .meta {
+    font-size: .72rem;
+    color: var(--ck-muted);
+    margin-top: .15rem;
+  }
+  .prestamo-monto {
+    text-align: right;
+  }
+  .prestamo-monto .val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ck-ink);
+  }
+  .prestamo-monto .lbl {
+    font-size: .65rem;
+    color: var(--ck-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 600;
+    margin-top: .15rem;
+  }
+  .prestamo-chevron {
+    color: var(--ck-muted);
+    transition: transform .2s;
+    font-size: 1.1rem;
+  }
+  .prestamo-card.expanded .prestamo-chevron { transform: rotate(180deg); color: var(--ck-accent); }
+
+  /* ── Pills de estado ────────────────────────────────────── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .3rem .65rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+  }
+  .pill-vigente { background: var(--ck-ok-soft); color: var(--ck-ok); }
+  .pill-liquidado { background: var(--ck-accent-soft); color: var(--ck-accent); }
+  .pill-vencido { background: var(--ck-warn-soft); color: #92400e; }
+  .pill-rechazado { background: var(--ck-danger-soft); color: var(--ck-danger); }
+
+  /* ── Workflow timeline (al expandir) ────────────────────── */
+  .prestamo-workflow {
+    padding: 1.25rem 1.25rem 1.5rem;
+    border-top: 1px solid var(--ck-border);
+    background: #fafbfc;
+  }
+
+  .workflow-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .workflow-step {
+    position: relative;
+    padding: 0 .5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .workflow-step::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: calc(50% + 22px);
+    right: calc(-50% + 22px);
+    height: 2px;
+    background: var(--ck-border);
+    z-index: 0;
+  }
+  .workflow-step:last-child::after { display: none; }
+  .workflow-step.done::after { background: var(--ck-ok); }
+  .workflow-step .step-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--ck-border);
+    color: var(--ck-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    z-index: 1;
+    margin-bottom: .4rem;
+  }
+  .workflow-step.done .step-circle {
+    background: var(--ck-ok);
+    border-color: var(--ck-ok);
+    color: #fff;
+  }
+  .workflow-step.current .step-circle {
+    background: var(--ck-accent);
+    border-color: var(--ck-accent);
+    color: #fff;
+    box-shadow: 0 0 0 4px var(--ck-accent-soft);
+  }
+  .workflow-step .step-name {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--ck-ink);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .workflow-step.muted .step-name { color: var(--ck-muted); }
+  .workflow-step .step-date {
+    font-size: .7rem;
+    color: var(--ck-muted);
+    margin-top: .15rem;
+  }
+
+  /* ── Workflow details — 2x2 grid de etapas ───────────────── */
+  .workflow-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .85rem;
+  }
+  .workflow-panel {
+    background: #fff;
+    border: 1px solid var(--ck-border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .workflow-panel-head {
+    padding: .55rem .85rem;
+    background: #fafbfc;
+    border-bottom: 1px solid var(--ck-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .workflow-panel-head .titulo {
+    font-size: .76rem;
+    color: var(--ck-muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .workflow-panel-head .step-num {
+    width: 20px; height: 20px;
+    background: var(--ck-accent);
+    color: #fff;
+    border-radius: 50%;
+    font-size: .68rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+  .workflow-panel-head.muted .step-num { background: var(--ck-border); color: var(--ck-muted); }
+  .workflow-panel-body { padding: .8rem .95rem; }
+
+  /* Cada item: label uppercase + valor */
+  .wf-row { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-bottom: .55rem; }
+  .wf-row:last-child { margin-bottom: 0; }
+  .wf-item label {
+    display: block;
+    font-size: .65rem;
+    color: var(--ck-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: .2rem;
+  }
+  .wf-item .val {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ck-ink);
+    line-height: 1.3;
+  }
+  .wf-item .val-soft { color: var(--ck-muted); font-weight: 500; font-style: italic; }
+  .wf-item .val.success { color: var(--ck-ok); }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    font-size: .68rem;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: var(--ck-muted);
+  }
+  .tag-ok { background: var(--ck-ok-soft); color: var(--ck-ok); }
+  .tag-warn { background: var(--ck-warn-soft); color: var(--ck-warn); }
+  .tag-info { background: var(--ck-accent-soft); color: var(--ck-accent); }
+
+  /* Sub-bloque de cobranza con resumen de cuotas */
+  .cobranza-mini {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    margin-bottom: .65rem;
+  }
+  .cobranza-mini .mini-card {
+    background: #fafbfc;
+    border: 1px solid var(--ck-border);
+    border-radius: 4px;
+    padding: .45rem;
+    text-align: center;
+  }
+  .cobranza-mini .mini-card .num {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .cobranza-mini .mini-card .lbl {
+    font-size: .62rem;
+    color: var(--ck-muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-top: .2rem;
+  }
+  .cobranza-mini .mini-card.ok .num { color: var(--ck-ok); }
+  .cobranza-mini .mini-card.warn .num { color: var(--ck-warn); }
+  .cobranza-mini .mini-card.danger .num { color: var(--ck-danger); }
+
+  /* Mini-progress bar para cobranza */
+  .progress-cuotas {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: .25rem;
+  }
+  .progress-cuotas .bar {
+    height: 100%;
+    background: var(--ck-ok);
+  }
+
+  /* Persona pill (analista/cajero/comité) */
+  .persona-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: var(--ck-accent-soft);
+    color: var(--ck-accent);
+    padding: .25rem .55rem;
+    border-radius: 4px;
+    font-size: .75rem;
+    font-weight: 600;
+  }
+  .persona-pill i { font-size: .8rem; }
+
+  /* Acciones del workflow (botones acción) */
+  .workflow-actions {
+    display: flex;
+    gap: .5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--ck-border);
+    justify-content: flex-end;
+  }
+  .btn {
+    padding: .4rem .85rem;
+    border-radius: 5px;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border: 1px solid var(--ck-border);
+    background: #fff;
+    color: var(--ck-muted);
+  }
+  .btn:hover { background: #f8fafc; border-color: var(--ck-accent); color: var(--ck-accent); }
+  .btn-primary {
+    background: var(--ck-accent);
+    border-color: var(--ck-accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #1d4ed8; color: #fff; }
+  .btn-success {
+    background: var(--ck-ok);
+    border-color: var(--ck-ok);
+    color: #fff;
+  }
+  .btn-success:hover { background: #047857; color: #fff; }
+
+  /* Helper colors */
+  .text-success { color: var(--ck-ok); }
+  .text-danger  { color: var(--ck-danger); }
+  .text-warn    { color: var(--ck-warn); }
+  .text-muted   { color: var(--ck-muted); }
+</style>
+</head>
+<body>
+<div class="container-shell">
+  <div class="cockpit-shell">
+
+    <!-- ════════ HEAD CON BUSCADOR ════════ -->
+    <div class="cockpit-head">
+      <span class="icon-page"><i class="bi bi-diagram-3"></i></span>
+      <div class="titles">
+        <h1>Workflow de Préstamos por Cliente</h1>
+        <div class="sub">Trazabilidad completa del ciclo crediticio</div>
+      </div>
+
+      <div class="search-box">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" placeholder="Buscar por DNI o nombre del cliente..." value="Pérez">
+
+        <!-- Resultados de búsqueda (mock, simulando autocomplete) -->
+        <div class="search-results">
+          <div class="search-result-item">
+            <div style="flex:1;">
+              <div class="nombre">PÉREZ ROJAS, Juan Carlos</div>
+              <div class="dni">DNI 45122356 · Pilcomayo</div>
+            </div>
+            <span class="tag tag-info">3 préstamos</span>
+          </div>
+          <div class="search-result-item">
+            <div style="flex:1;">
+              <div class="nombre">PÉREZ MAMANI, Luis Alberto</div>
+              <div class="dni">DNI 45987654 · Huancayo</div>
+            </div>
+            <span class="tag">1 préstamo</span>
+          </div>
+          <div class="search-result-item">
+            <div style="flex:1;">
+              <div class="nombre">PÉREZ SILVA, María Inés</div>
+              <div class="dni">DNI 47234518 · Pilcomayo</div>
+            </div>
+            <span class="tag">2 préstamos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ CLIENTE SELECCIONADO — BANNER ════════ -->
+    <div class="cliente-banner">
+      <div class="cliente-avatar">PR</div>
+      <div class="cliente-info">
+        <div class="nombre">PÉREZ ROJAS, Juan Carlos</div>
+        <div class="meta">
+          DNI <strong>45122356</strong> · 41 años · Comerciante · <strong>Pilcomayo - Huancayo</strong> ·
+          Cliente desde <strong>15/03/2024</strong>
+        </div>
+      </div>
+      <div class="cliente-stats">
+        <div class="cliente-stat">
+          <div class="num">3</div>
+          <div class="lbl">Préstamos</div>
+        </div>
+        <div class="cliente-stat">
+          <div class="num text-success">1</div>
+          <div class="lbl">Vigente</div>
+        </div>
+        <div class="cliente-stat">
+          <div class="num">2</div>
+          <div class="lbl">Liquidados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ KPI STRIP — MÉTRICAS DEL CLIENTE ════════ -->
+    <div class="kpi-strip">
+      <div class="kpi">
+        <div class="lbl">Total Colocado</div>
+        <div class="val">S/ 2,800</div>
+        <div class="hint">en 3 préstamos</div>
+      </div>
+      <div class="kpi ok">
+        <div class="lbl">Saldo Vigente</div>
+        <div class="val">S/ 420</div>
+        <div class="hint">de 1 préstamo activo</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Cuotas Pagadas</div>
+        <div class="val">18 / 25</div>
+        <div class="hint">72% de cumplimiento</div>
+      </div>
+      <div class="kpi ok">
+        <div class="lbl">Score Crediticio</div>
+        <div class="val">888</div>
+        <div class="hint">Excelente</div>
+      </div>
+      <div class="kpi ok">
+        <div class="lbl">Comportamiento</div>
+        <div class="val val-text" style="font-size:1.1rem; padding-top:.45rem;">
+          <span class="tag tag-ok" style="font-size:.78rem; padding:.25rem .65rem;">PUNTUAL</span>
+        </div>
+        <div class="hint">0 atrasos · sin mora</div>
+      </div>
+    </div>
+
+    <!-- ════════ LISTA DE PRÉSTAMOS DEL CLIENTE ════════ -->
+    <div class="prestamos-list">
+
+      <!-- ─── Préstamo 1 (expandido) ─── -->
+      <div class="prestamo-card expanded">
+        <div class="prestamo-card-head">
+          <span class="prestamo-code">EXP-2026-00002</span>
+          <div class="prestamo-info">
+            <div class="producto">
+              <i class="bi bi-box-seam" style="color:var(--ck-accent);"></i>
+              Créditos Diarios — Interés Fijo
+            </div>
+            <div class="meta">
+              <i class="bi bi-calendar3"></i> Desembolsado 23/05/2026 ·
+              5 cuotas diarias · Tasa 12% · Modalidad Paralelo
+            </div>
+          </div>
+          <div>
+            <span class="pill pill-vigente">
+              <i class="bi bi-check-circle-fill"></i> VIGENTE
+            </span>
+          </div>
+          <div class="prestamo-monto">
+            <div class="val">S/ 100</div>
+            <div class="lbl">monto</div>
+          </div>
+          <i class="bi bi-chevron-down prestamo-chevron"></i>
+        </div>
+
+        <!-- ─── WORKFLOW DETALLADO ─── -->
+        <div class="prestamo-workflow">
+
+          <!-- Stepper visual de etapas -->
+          <div class="workflow-stepper">
+            <div class="workflow-step done">
+              <div class="step-circle"><i class="bi bi-clipboard-check"></i></div>
+              <div class="step-name">Evaluación</div>
+              <div class="step-date">20/05/2026</div>
+            </div>
+            <div class="workflow-step done">
+              <div class="step-circle"><i class="bi bi-people-fill"></i></div>
+              <div class="step-name">Comité</div>
+              <div class="step-date">22/05/2026</div>
+            </div>
+            <div class="workflow-step done">
+              <div class="step-circle"><i class="bi bi-cash-coin"></i></div>
+              <div class="step-name">Desembolso</div>
+              <div class="step-date">23/05/2026</div>
+            </div>
+            <div class="workflow-step current">
+              <div class="step-circle"><i class="bi bi-arrow-clockwise"></i></div>
+              <div class="step-name">Cobranza</div>
+              <div class="step-date">en curso</div>
+            </div>
+          </div>
+
+          <!-- Grid 2×2: detalles de cada etapa -->
+          <div class="workflow-grid">
+
+            <!-- 1. Evaluación -->
+            <div class="workflow-panel">
+              <div class="workflow-panel-head">
+                <span class="titulo">
+                  <span class="step-num">1</span>
+                  <i class="bi bi-clipboard-check"></i> Evaluación del Analista
+                </span>
+                <span class="tag tag-ok">APROBADA</span>
+              </div>
+              <div class="workflow-panel-body">
+                <div class="wf-row">
+                  <div class="wf-item">
+                    <label>Monto Solicitado</label>
+                    <div class="val">S/ 100.00</div>
+                  </div>
+                  <div class="wf-item">
+                    <label>Monto Aprobado</label>
+                    <div class="val success">S/ 100.00</div>
+                  </div>
+                </div>
+                <div class="wf-row">
+                  <div class="wf-item">
+                    <label>Riesgo</label>
+                    <div><span class="tag tag-warn">MEDIO</span></div>
+                  </div>
+                  <div class="wf-item">
+                    <label>Score</label>
+                    <div class="val">888 · NORMAL</div>
+                  </div>
+                </div>
+                <div class="wf-row" style="grid-template-columns:1fr;">
+                  <div class="wf-item">
+                    <label>Analista</label>
+                    <div>
+                      <span class="persona-pill">
+                        <i class="bi bi-person-fill"></i> OCHOA AMELO, María
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="wf-row" style="grid-template-columns:1fr;">
+                  <div class="wf-item">
+                    <label>Observaciones</label>
+                    <div class="val val-soft">"Cliente con buen historial crediticio, sin observaciones."</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Comité -->
+            <div class="workflow-panel">
+              <div class="workflow-panel-head">
+                <span class="titulo">
+                  <span class="step-num">2</span>
+                  <i class="bi bi-people-fill"></i> Comité de Crédito
+                </span>
+                <span class="tag tag-ok">RESOLUCIÓN: APROBADO</span>
+              </div>
+              <div class="workflow-panel-body">
+                <div class="wf-row">
+                  <div class="wf-item">
+                    <label>Fecha Sesión</label>
+                    <div class="val">22/05/2026 · 15:30</div>
+                  </div>
+                  <div class="wf-item">
+                    <label>N° Acta</label>
+                    <div class="val">ACT-2026-0017</div>
+                  </div>
+                </div>
+                <div class="wf-row">
+                  <div class="wf-item">
+                    <label>Votación</label>
+                    <div>
+                      <span class="tag tag-ok">✓ 3 Aprueban</span>
+                    </div>
+                  </div>
+                  <div class="wf-item">
+                    <label>Política aplicada</label>
+                    <div class="val val-soft">HALF_UP · 2 dec.</div>
+                  </div>
+                </div>
+                <div class="wf-row" style="grid-template-columns:1fr;">
+                  <div class="wf-item">
+                    <label>Resolución del Gerente</label>
+                    <div>
+                      <span class="persona-pill">
+                        <i class="bi bi-shield-check"></i> MUÑOZ TORRES, Carla (Gerente Agencia)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="wf-row" style="grid-template-columns:1fr;">
+                  <div class="wf-item">
+                    <label>Condicionantes</label>
+                    <div class="val val-soft">"Cliente debe presentar copia actualizada del DNI al desembolso."</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Desembolso -->
+            <div class="workflow-panel">
+              <div class="workflow-panel-head">
+                <span class="titulo">
+                  <span class="step-num">3</span>
+                  <i class="bi bi-cash-coin"></i> Desembolso
+                </span>
+                <span class="tag tag-ok">EFECTUADO</span>
+              </div>
+              <div class="workflow-panel-body">
+                <div class="wf-row">
+                  <div class="wf-item">
+                    <label>Fecha Desembolso</label>
+                    <div class="val">23/05/2026 · 09:15</div>
+                  </div>
+                  <div class="wf-item">
+                    <label>Canal</label>
+                    <div><span class="tag tag-ok">💰 Efectivo</span></div>
+                  </div>
+                </div>
+                <div class="wf-row">
+                  <div class="wf-item">
+                    <label>Monto Entregado</label>
+                    <div class="val success">S/ 100.00</div>
+                  </div>
+                  <div class="wf-item">
+                    <label>N° Contrato</label>
+                    <div class="val">CTR-2026-00021</div>
+                  </div>
+                </div>
+                <div class="wf-row" style="grid-template-columns:1fr;">
+                  <div class="wf-item">
+                    <label>Cajero responsable</label>
+                    <div>
+                      <span class="persona-pill">
+                        <i class="bi bi-cash"></i> CHU SANTILLAN, Pedro (Caja Pilcomayo)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="wf-row" style="grid-template-columns:1fr;">
+                  <div class="wf-item">
+                    <label>Documentos generados</label>
+                    <div style="display:flex; gap:.3rem; flex-wrap:wrap;">
+                      <span class="tag"><i class="bi bi-file-earmark-pdf"></i> Contrato PDF</span>
+                      <span class="tag"><i class="bi bi-file-earmark-word"></i> Pagaré</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Cobranza (en curso) -->
+            <div class="workflow-panel">
+              <div class="workflow-panel-head">
+                <span class="titulo">
+                  <span class="step-num">4</span>
+                  <i class="bi bi-arrow-clockwise"></i> Cobranza
+                </span>
+                <span class="tag tag-info">EN CURSO</span>
+              </div>
+              <div class="workflow-panel-body">
+                <div class="cobranza-mini">
+                  <div class="mini-card ok">
+                    <div class="num">3</div>
+                    <div class="lbl">Pagadas</div>
+                  </div>
+                  <div class="mini-card warn">
+                    <div class="num">2</div>
+                    <div class="lbl">Pendientes</div>
+                  </div>
+                  <div class="mini-card">
+                    <div class="num">0</div>
+                    <div class="lbl">En mora</div>
+                  </div>
+                </div>
+
+                <div class="wf-item">
+                  <label>Avance de pagos</label>
+                  <div class="progress-cuotas">
+                    <div class="bar" style="width:60%;"></div>
+                  </div>
+                  <div style="font-size:.7rem; color:var(--ck-muted); margin-top:.2rem;">
+                    60% · 3 de 5 cuotas pagadas
+                  </div>
+                </div>
+
+                <div class="wf-row" style="margin-top:.6rem;">
+                  <div class="wf-item">
+                    <label>Próximo Vencimiento</label>
+                    <div class="val">26/05/2026</div>
+                  </div>
+                  <div class="wf-item">
+                    <label>Cuota Próxima</label>
+                    <div class="val">S/ 21.00</div>
+                  </div>
+                </div>
+                <div class="wf-row" style="margin-top:.6rem;">
+                  <div class="wf-item">
+                    <label>Saldo Capital</label>
+                    <div class="val">S/ 40.00</div>
+                  </div>
+                  <div class="wf-item">
+                    <label>Total Pagado</label>
+                    <div class="val success">S/ 63.00</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones contextuales según rol -->
+          <div class="workflow-actions">
+            <button class="btn">
+              <i class="bi bi-file-earmark-pdf"></i> Contrato PDF
+            </button>
+            <button class="btn">
+              <i class="bi bi-table"></i> Ver Cronograma
+            </button>
+            <button class="btn">
+              <i class="bi bi-clock-history"></i> Historial completo
+            </button>
+            <button class="btn btn-primary">
+              <i class="bi bi-cash-coin"></i> Registrar Pago
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Préstamo 2 (colapsado) ─── -->
+      <div class="prestamo-card">
+        <div class="prestamo-card-head">
+          <span class="prestamo-code">EXP-2025-00187</span>
+          <div class="prestamo-info">
+            <div class="producto">
+              <i class="bi bi-box-seam" style="color:var(--ck-accent);"></i>
+              Microcrédito Semanal
+            </div>
+            <div class="meta">
+              <i class="bi bi-calendar3"></i> Desembolsado 12/08/2025 ·
+              Liquidado 14/11/2025 · 12 cuotas semanales · Tasa 8%
+            </div>
+          </div>
+          <div>
+            <span class="pill pill-liquidado">
+              <i class="bi bi-trophy"></i> LIQUIDADO
+            </span>
+          </div>
+          <div class="prestamo-monto">
+            <div class="val">S/ 1,500</div>
+            <div class="lbl">monto</div>
+          </div>
+          <i class="bi bi-chevron-down prestamo-chevron"></i>
+        </div>
+      </div>
+
+      <!-- ─── Préstamo 3 (colapsado) ─── -->
+      <div class="prestamo-card">
+        <div class="prestamo-card-head">
+          <span class="prestamo-code">EXP-2024-00045</span>
+          <div class="prestamo-info">
+            <div class="producto">
+              <i class="bi bi-box-seam" style="color:var(--ck-accent);"></i>
+              Crédito Comercial
+            </div>
+            <div class="meta">
+              <i class="bi bi-calendar3"></i> Desembolsado 22/03/2024 ·
+              Liquidado 22/12/2024 · 9 cuotas mensuales · Tasa 6%
+            </div>
+          </div>
+          <div>
+            <span class="pill pill-liquidado">
+              <i class="bi bi-trophy"></i> LIQUIDADO
+            </span>
+          </div>
+          <div class="prestamo-monto">
+            <div class="val">S/ 1,200</div>
+            <div class="lbl">monto</div>
+          </div>
+          <i class="bi bi-chevron-down prestamo-chevron"></i>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

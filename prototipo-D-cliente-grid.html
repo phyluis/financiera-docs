@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo D · Cliente (grid de cards dashboard) — Reelige</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #F3F5F9; color: #1F2937; padding: 18px; }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #4f8ef5 0%, #1a4fc4 100%);
+    color: white; border-radius: 10px; padding: 16px 22px; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(31,71,136,.15); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .icon { width: 36px; height: 36px; background: rgba(255,255,255,.18); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .brand h1 { font-size: 17px; font-weight: 700; line-height: 1.1; }
+  .brand small { display: block; font-weight: 400; font-size: 11px; opacity: .85; }
+  .header .right { font-size: 12px; opacity: .9; text-align: right; }
+  .header .right strong { display: block; font-size: 14px; }
+
+  /* Toolbar global */
+  .toolbar { background: white; border-radius: 10px; padding: 14px 20px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .toolbar .stats { display: flex; gap: 18px; flex: 1; }
+  .toolbar .stat { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .toolbar .stat .num { font-size: 18px; font-weight: 800; color: #1F4788; }
+  .toolbar .stat.warn .num { color: #F59E0B; }
+  .toolbar .stat.success .num { color: #10B981; }
+  .toolbar .stat .lbl { color: #6B7280; font-size: 11px; }
+  .toolbar .bar { width: 200px; height: 8px; background: #E5E7EB; border-radius: 4px; overflow: hidden; }
+  .toolbar .fill { height: 100%; background: linear-gradient(90deg, #10B981, #059669); width: 71%; }
+  .toolbar .search input { padding: 7px 12px 7px 30px; border: 1px solid #D1D5DB; border-radius: 6px;
+    font-size: 12.5px; min-width: 220px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2'><circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>");
+    background-repeat: no-repeat; background-position: 8px center; }
+  .toolbar .filters { display: flex; gap: 5px; }
+  .filter-btn { padding: 6px 11px; font-size: 11.5px; font-weight: 600; border: 1px solid #D1D5DB;
+    background: white; border-radius: 5px; cursor: pointer; color: #6B7280; }
+  .filter-btn.active { background: #1F4788; color: white; border-color: #1F4788; }
+
+  /* Grid de cards */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  /* Card */
+  .card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    border-top: 3px solid #1F4788; transition: all .2s; cursor: pointer; }
+  .card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  .card.expanded { grid-column: span 2; cursor: default; }
+  .card.expanded:hover { transform: none; }
+  .card.new { border-top-color: #10B981; }
+  .card.incomplete { border-top-color: #F59E0B; }
+  .card.required { border-top-color: #DC2626; }
+
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  .card-head .ico { width: 32px; height: 32px; border-radius: 8px; background: #EFF6FF; color: #1F4788;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  .card.new .card-head .ico { background: #D1FAE5; color: #065F46; }
+  .card.incomplete .card-head .ico { background: #FEF3C7; color: #92400E; }
+  .card-head h3 { font-size: 13.5px; font-weight: 700; color: #1F2937; flex: 1; }
+  .card-head .status { font-size: 10.5px; padding: 3px 8px; border-radius: 10px; font-weight: 700; }
+  .status.ok { background: #D1FAE5; color: #065F46; }
+  .status.warn { background: #FEF3C7; color: #92400E; }
+  .status.new { background: #DBEAFE; color: #1E40AF; }
+  .card-head .toggle { color: #9CA3AF; font-size: 12px; transition: transform .2s; }
+  .card.expanded .card-head .toggle { transform: rotate(180deg); }
+
+  /* Preview (cuando card está colapsada) */
+  .preview { margin-top: 10px; padding-top: 10px; border-top: 1px solid #F3F4F6; }
+  .preview-row { display: flex; justify-content: space-between; font-size: 11.5px;
+    padding: 3px 0; line-height: 1.4; }
+  .preview-row .k { color: #6B7280; }
+  .preview-row .v { color: #1F2937; font-weight: 600; max-width: 60%; text-align: right;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .preview-row .v.empty { color: #9CA3AF; font-style: italic; font-weight: 400; }
+
+  .card-foot { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #F3F4F6;
+    display: flex; justify-content: space-between; align-items: center; }
+  .card-foot .pct { font-size: 10.5px; color: #6B7280; }
+  .card-foot .btn-edit { background: white; color: #1F4788; border: 1px solid #1F4788;
+    padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .card-foot .btn-edit:hover { background: #1F4788; color: white; }
+
+  /* Expanded body (form) */
+  .card-body { margin-top: 14px; padding-top: 14px; border-top: 1px solid #F3F4F6; display: none; }
+  .card.expanded .card-body { display: block; }
+  .card.expanded .preview { display: none; }
+  .card.expanded .card-foot { display: none; }
+
+  /* Form */
+  .form-row { display: grid; gap: 10px; margin-bottom: 10px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .cols-3-1 { grid-template-columns: 1fr 1fr 1fr 1.5fr; }
+  .cols-2-1 { grid-template-columns: 2fr 1fr; }
+
+  .field label { display: block; font-size: 11px; color: #374151; font-weight: 500; margin-bottom: 3px; }
+  .field label .req { color: #DC2626; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 6px 9px; font: inherit; font-size: 12px;
+    border: 1px solid #D1D5DB; border-radius: 5px; background: white; }
+  .field input:focus { outline: 2px solid #4f8ef5; outline-offset: -1px; border-color: #4f8ef5; }
+
+  .subsec { font-size: 10px; font-weight: 700; color: #6B7280; text-transform: uppercase;
+    letter-spacing: .5px; margin: 12px 0 6px 0; padding-bottom: 3px; border-bottom: 1px dashed #E5E7EB; }
+  .subsec:first-of-type { margin-top: 0; }
+
+  .pill-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .pill-group label { padding: 5px 10px; border: 1px solid #D1D5DB; border-radius: 14px;
+    font-size: 11px; cursor: pointer; background: white; }
+  .pill-group input { display: none; }
+  .pill-group input:checked + label { background: #1F4788; color: white; border-color: #1F4788; }
+
+  /* Acciones cuando expandido */
+  .edit-actions { margin-top: 10px; padding-top: 8px; border-top: 1px solid #F3F4F6;
+    display: flex; justify-content: flex-end; gap: 6px; }
+  .btn-sm { padding: 5px 12px; border-radius: 5px; border: 0; font: inherit; font-size: 11.5px;
+    font-weight: 600; cursor: pointer; }
+  .btn-cancel { background: white; color: #6B7280; border: 1px solid #D1D5DB; }
+  .btn-save { background: #10B981; color: white; }
+
+  /* Upload preview */
+  .uploads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .upload-card { border: 2px dashed #D1D5DB; border-radius: 6px; padding: 12px 8px; text-align: center;
+    cursor: pointer; background: #FAFBFD; }
+  .upload-card.has-file { border: 2px solid #10B981; background: #F0FDF4; }
+  .upload-card .ico { font-size: 20px; }
+  .upload-card .lbl { font-size: 11px; color: #374151; margin-top: 4px; font-weight: 600; }
+
+  /* Sticky footer */
+  .footer { background: white; border-radius: 10px; padding: 14px 20px; margin-top: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05); position: sticky; bottom: 10px; }
+  .btn { padding: 9px 18px; border-radius: 6px; border: 0; font: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #1F4788; color: white; }
+  .btn-secondary { background: white; color: #1F4788; border: 1px solid #1F4788; }
+  .btn-ghost { background: transparent; color: #6B7280; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="icon">🏛</div>
+      <div>
+        <h1>Reelige</h1>
+        <small>Sistema de Gestión Financiera</small>
+      </div>
+    </div>
+    <div class="right">
+      <strong>Registro de Cliente</strong>
+      <span>MOSQUERA SACARIAS, Mirella · DNI 45782931</span>
+    </div>
+  </div>
+
+  <!-- Toolbar global -->
+  <div class="toolbar">
+    <div class="stats">
+      <div class="stat success">
+        <div><div class="num">5</div><div class="lbl">Completas</div></div>
+      </div>
+      <div class="stat warn">
+        <div><div class="num">2</div><div class="lbl">Pendientes</div></div>
+      </div>
+      <div class="stat">
+        <div><div class="num">71%</div><div class="lbl">Total</div></div>
+        <div class="bar"><div class="fill"></div></div>
+      </div>
+    </div>
+    <div class="search"><input placeholder="Buscar campo…  (Ctrl+K)"></div>
+    <div class="filters">
+      <button class="filter-btn active">Todos</button>
+      <button class="filter-btn">Pendientes</button>
+      <button class="filter-btn">Nuevos</button>
+    </div>
+  </div>
+
+  <!-- Grid de cards -->
+  <div class="grid">
+
+    <!-- Card 1: Identidad -->
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-head">
+        <div class="ico">1</div>
+        <h3>Identidad</h3>
+        <span class="status ok">✓ Completa</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="preview">
+        <div class="preview-row"><span class="k">Nombre</span><span class="v">Mosquera Sacarias, Mirella</span></div>
+        <div class="preview-row"><span class="k">DNI</span><span class="v">45782931</span></div>
+        <div class="preview-row"><span class="k">F. nacimiento</span><span class="v">12/04/1985</span></div>
+        <div class="preview-row"><span class="k">Estado civil</span><span class="v">Casada</span></div>
+      </div>
+      <div class="card-foot">
+        <span class="pct">100 % · 8/8 campos</span>
+        <button class="btn-edit">✎ Editar</button>
+      </div>
+      <div class="card-body">
+        <div class="form-row cols-3">
+          <div class="field"><label>Tipo doc</label><select><option>DNI</option></select></div>
+          <div class="field"><label>Número</label><input value="45782931"></div>
+          <div class="field"><label>F. nacimiento</label><input type="date" value="1985-04-12"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Ap. paterno</label><input value="MOSQUERA"></div>
+          <div class="field"><label>Ap. materno</label><input value="SACARIAS"></div>
+          <div class="field"><label>Nombres</label><input value="Mirella"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Sexo</label>
+            <div class="pill-group">
+              <input type="radio" id="sx1" name="sx"><label for="sx1">M</label>
+              <input type="radio" id="sx2" name="sx" checked><label for="sx2">F</label>
+            </div>
+          </div>
+          <div class="field"><label>Estado civil</label>
+            <select><option>Soltero(a)</option><option selected>Casado(a)</option></select>
+          </div>
+          <div class="field"><label>Email</label><input value="mirella@gmail.com"></div>
+        </div>
+        <div class="edit-actions">
+          <button class="btn-sm btn-cancel" onclick="event.stopPropagation(); collapseCard(this)">Cancelar</button>
+          <button class="btn-sm btn-save" onclick="event.stopPropagation(); collapseCard(this)">✓ Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Cónyuge -->
+    <div class="card new" onclick="toggleCard(this)">
+      <div class="card-head">
+        <div class="ico">2</div>
+        <h3>Cónyuge y Dependientes</h3>
+        <span class="status new">★ Nuevo</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="preview">
+        <div class="preview-row"><span class="k">Cónyuge</span><span class="v">Rodríguez Salas, Pedro</span></div>
+        <div class="preview-row"><span class="k">DNI cónyuge</span><span class="v">42118567</span></div>
+        <div class="preview-row"><span class="k">N° hijos</span><span class="v">3 (2 estudiando)</span></div>
+        <div class="preview-row"><span class="k">Nivel educativo</span><span class="v">Secundaria, Superior</span></div>
+      </div>
+      <div class="card-foot">
+        <span class="pct">100 % · 5/5 campos</span>
+        <button class="btn-edit">✎ Editar</button>
+      </div>
+      <div class="card-body">
+        <div class="form-row cols-2-1">
+          <div class="field"><label>Cónyuge</label><input value="Rodríguez Salas, Pedro"></div>
+          <div class="field"><label>DNI cónyuge</label><input value="42118567"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>N° hijos</label><input type="number" value="3"></div>
+          <div class="field"><label>Hijos estudiando</label><input type="number" value="2"></div>
+          <div class="field"><label>Total dependientes</label><input value="5"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Domicilio -->
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-head">
+        <div class="ico">3</div>
+        <h3>Ubicación y Vivienda</h3>
+        <span class="status ok">✓ Completa</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="preview">
+        <div class="preview-row"><span class="k">Zona</span><span class="v">AAHH · Las Lomas Sur</span></div>
+        <div class="preview-row"><span class="k">Dirección</span><span class="v">Jr. Las Begonias 245</span></div>
+        <div class="preview-row"><span class="k">Distrito</span><span class="v">S.J. Lurigancho · Lima</span></div>
+        <div class="preview-row"><span class="k">Tenencia</span><span class="v">Propio · 3–5 años</span></div>
+      </div>
+      <div class="card-foot">
+        <span class="pct">100 % · 12/12 campos</span>
+        <button class="btn-edit">✎ Editar</button>
+      </div>
+      <div class="card-body">
+        <div class="form-row cols-3-1">
+          <div class="field"><label>Tipo zona</label>
+            <select><option>URB</option><option selected>AAHH</option></select>
+          </div>
+          <div class="field"><label>Nombre zona</label><input value="Las Lomas Sur"></div>
+          <div class="field"><label>Tipo vía</label>
+            <select><option selected>Jr.</option></select>
+          </div>
+          <div class="field"><label>Dirección + N°</label><input value="Las Begonias 245"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Departamento</label><input value="Lima"></div>
+          <div class="field"><label>Provincia</label><input value="Lima"></div>
+          <div class="field"><label>Distrito</label><input value="S.J. Lurigancho"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Referencias (INCOMPLETO) -->
+    <div class="card incomplete" onclick="toggleCard(this)">
+      <div class="card-head">
+        <div class="ico">4</div>
+        <h3>Referencias de Contacto</h3>
+        <span class="status warn">⚠ Incompleta</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="preview">
+        <div class="preview-row"><span class="k">1ra referencia</span><span class="v">Mosquera S., Luis (Hno.)</span></div>
+        <div class="preview-row"><span class="k">2da referencia</span><span class="v empty">— Faltante</span></div>
+        <div class="preview-row"><span class="k">Total</span><span class="v">1 de 2 mínimo</span></div>
+      </div>
+      <div class="card-foot">
+        <span class="pct" style="color:#F59E0B;">50 % · agregar 1 más</span>
+        <button class="btn-edit">✎ Editar</button>
+      </div>
+    </div>
+
+    <!-- Card 5: Económica -->
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-head">
+        <div class="ico">5</div>
+        <h3>Situación Económica</h3>
+        <span class="status ok">✓ Completa</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="preview">
+        <div class="preview-row"><span class="k">Empleo</span><span class="v">Independiente</span></div>
+        <div class="preview-row"><span class="k">Ocupación</span><span class="v">Comerciante</span></div>
+        <div class="preview-row"><span class="k">Ingresos / Gastos</span><span class="v">S/ 3,200 / S/ 1,500</span></div>
+        <div class="preview-row"><span class="k">Excedente neto</span><span class="v" style="color:#059669;">S/ 1,700</span></div>
+      </div>
+      <div class="card-foot">
+        <span class="pct">100 % · 6/6 campos</span>
+        <button class="btn-edit">✎ Editar</button>
+      </div>
+    </div>
+
+    <!-- Card 6: Negocio -->
+    <div class="card new" onclick="toggleCard(this)">
+      <div class="card-head">
+        <div class="ico">6</div>
+        <h3>Negocio · Actividad</h3>
+        <span class="status new">★ Nuevo</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="preview">
+        <div class="preview-row"><span class="k">Tipo persona</span><span class="v">Natural</span></div>
+        <div class="preview-row"><span class="k">Giro</span><span class="v">Bodega · abarrotes</span></div>
+        <div class="preview-row"><span class="k">Categoría</span><span class="v">Comercial</span></div>
+        <div class="preview-row"><span class="k">Antigüedad</span><span class="v">6 años</span></div>
+      </div>
+      <div class="card-foot">
+        <span class="pct">100 % · 6/6 campos</span>
+        <button class="btn-edit">✎ Editar</button>
+      </div>
+    </div>
+
+    <!-- Card 7: Adjuntos (INCOMPLETO) -->
+    <div class="card incomplete new" style="grid-column: span 2;" onclick="toggleCard(this)">
+      <div class="card-head">
+        <div class="ico">7</div>
+        <h3>Adjuntos del Expediente</h3>
+        <span class="status warn">⚠ 2 faltantes</span>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="uploads" style="margin-top: 12px;">
+        <div class="upload-card has-file"><div class="ico">📍✓</div><div class="lbl">Croquis negocio</div></div>
+        <div class="upload-card has-file"><div class="ico">🏠✓</div><div class="lbl">Croquis domicilio</div></div>
+        <div class="upload-card"><div class="ico">📷</div><div class="lbl">Foto fachada negocio</div></div>
+        <div class="upload-card"><div class="ico">📷</div><div class="lbl">Foto fachada domicilio</div></div>
+      </div>
+      <div class="card-foot" style="margin-top: 12px;">
+        <span class="pct" style="color:#F59E0B;">50 % · 2 archivos pendientes</span>
+        <button class="btn-edit">✎ Subir archivos</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sticky footer -->
+  <div class="footer">
+    <button class="btn btn-ghost">← Volver al listado</button>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span style="color:#F59E0B;font-size:12px;font-weight:600;">⚠ 2 secciones incompletas</span>
+      <button class="btn btn-secondary">💾 Guardar borrador</button>
+      <button class="btn btn-primary">Registrar Cliente</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleCard(card) {
+    // Solo expande si no está expandido y no se hizo click en un input/select/button
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT'
+        || event.target.tagName === 'BUTTON' || event.target.tagName === 'LABEL') return;
+    // Colapsar todas las otras
+    document.querySelectorAll('.card.expanded').forEach(c => {
+      if (c !== card) c.classList.remove('expanded');
+    });
+    card.classList.toggle('expanded');
+  }
+  function collapseCard(btn) {
+    btn.closest('.card').classList.remove('expanded');
+  }
+</script>
+</body>
+</html>

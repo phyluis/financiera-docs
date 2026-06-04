@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo B · Evaluación de Crédito (wizard multi-paso) — Reelige</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #F3F5F9; color: #1F2937; padding: 20px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* Header banner */
+  .header {
+    background: linear-gradient(135deg, #4f8ef5 0%, #1a4fc4 100%);
+    color: white; border-radius: 10px 10px 0 0; padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .icon { width: 38px; height: 38px; background: rgba(255,255,255,.18); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  .brand h1 { font-size: 18px; font-weight: 700; line-height: 1.1; }
+  .brand small { display: block; font-weight: 400; font-size: 11px; opacity: .85; }
+  .header .right { font-size: 13px; opacity: .9; text-align: right; }
+  .header .right strong { display: block; font-size: 15px; }
+
+  /* ───── Stepper ───── */
+  .stepper {
+    background: white; padding: 22px 30px 14px 30px; border-bottom: 1px solid #E5E7EB;
+    display: flex; align-items: flex-start; justify-content: space-between; position: relative;
+  }
+  .stepper::before {
+    content: ""; position: absolute; top: 36px; left: 60px; right: 60px;
+    height: 2px; background: #E5E7EB; z-index: 0;
+  }
+  .step { position: relative; z-index: 1; text-align: center; flex: 1; cursor: pointer; }
+  .step .dot {
+    width: 30px; height: 30px; border-radius: 50%; background: white; border: 2px solid #D1D5DB;
+    color: #9CA3AF; font-weight: 700; font-size: 12px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: center; transition: all .2s;
+  }
+  .step .lbl { font-size: 11px; color: #6B7280; margin-top: 6px; font-weight: 500; line-height: 1.2; }
+  .step.done .dot { background: #10B981; border-color: #10B981; color: white; }
+  .step.done .lbl { color: #065F46; }
+  .step.active .dot { background: #1F4788; border-color: #1F4788; color: white; box-shadow: 0 0 0 4px rgba(31,71,136,.15); }
+  .step.active .lbl { color: #1F4788; font-weight: 700; }
+
+  /* Context bar */
+  .context-bar {
+    background: #F8FAFD; padding: 10px 30px; font-size: 12px; color: #4B5563;
+    display: flex; gap: 22px; border-bottom: 1px solid #E5E7EB;
+  }
+  .context-bar span b { color: #1F2937; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700;
+    background: #FEF3C7; color: #92400E; }
+
+  /* Form area */
+  .form-area { background: white; padding: 28px 36px; min-height: 460px; }
+  .form-area h2 { font-size: 18px; color: #1F4788; margin-bottom: 4px; }
+  .form-area .step-desc { font-size: 12px; color: #6B7280; margin-bottom: 22px; }
+
+  .form-row { display: grid; gap: 14px; margin-bottom: 12px; }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .field label { display: block; font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; }
+  .field label .req { color: #DC2626; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 11px; font: inherit; font-size: 13px;
+    border: 1px solid #D1D5DB; border-radius: 6px; background: white;
+  }
+  .field input:focus { outline: 2px solid #4f8ef5; outline-offset: -1px; border-color: #4f8ef5; }
+
+  .pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill-group label { padding: 7px 14px; border: 1px solid #D1D5DB; border-radius: 18px;
+    font-size: 12px; cursor: pointer; background: white; }
+  .pill-group input { display: none; }
+  .pill-group input:checked + label { background: #1F4788; color: white; border-color: #1F4788; }
+
+  .subsec { font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase;
+    letter-spacing: .5px; margin: 18px 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #F3F4F6; }
+  .subsec:first-child { margin-top: 0; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  th { background: #F3F5F9; padding: 8px 10px; text-align: left; font-weight: 600; color: #4B5563; border-bottom: 1px solid #E5E7EB; }
+  td { padding: 6px 10px; border-bottom: 1px solid #F3F4F6; }
+  td input { width: 100%; padding: 4px 6px; border: 1px solid #E5E7EB; border-radius: 4px; font-size: 12px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .total-row { background: #FFFBEB; font-weight: 700; }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .kpi { background: #F8FAFD; border: 1px solid #E5E7EB; padding: 12px 14px; border-radius: 6px; }
+  .kpi small { font-size: 10px; text-transform: uppercase; color: #6B7280; letter-spacing: .5px; }
+  .kpi strong { display: block; font-size: 18px; color: #1F4788; margin-top: 2px; }
+  .kpi.success strong { color: #059669; }
+
+  /* Footer nav */
+  .nav-footer {
+    background: white; padding: 16px 30px; border-top: 1px solid #E5E7EB; border-radius: 0 0 10px 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .progress-text { font-size: 12px; color: #6B7280; }
+  .progress-text b { color: #1F4788; font-weight: 700; }
+  .nav-buttons { display: flex; gap: 8px; }
+  .btn { padding: 9px 18px; border-radius: 6px; border: 0; font: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .9; }
+  .btn-primary { background: #1F4788; color: white; }
+  .btn-secondary { background: white; color: #1F4788; border: 1px solid #1F4788; }
+  .btn-ghost { background: transparent; color: #6B7280; }
+  .btn-success { background: #10B981; color: white; }
+
+  /* Step tabs (clickable to demonstrate switching) */
+  .step-content { display: none; }
+  .step-content.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ───── Header ───── -->
+  <div class="header">
+    <div class="brand">
+      <div class="icon">🏛</div>
+      <div>
+        <h1>Reelige</h1>
+        <small>Sistema de Gestión Financiera</small>
+      </div>
+    </div>
+    <div class="right">
+      <strong>Evaluación de Crédito · EXP-2026-0142</strong>
+      <span>Analista: Pérez García, Juan · Agencia Lima Centro</span>
+    </div>
+  </div>
+
+  <!-- ───── Stepper ───── -->
+  <div class="stepper">
+    <div class="step done" onclick="goStep(1)"><div class="dot">✓</div><div class="lbl">Ficha<br>Cliente</div></div>
+    <div class="step done" onclick="goStep(2)"><div class="dot">✓</div><div class="lbl">Negocio /<br>Actividad</div></div>
+    <div class="step done" onclick="goStep(3)"><div class="dot">✓</div><div class="lbl">Centrales<br>de Riesgo</div></div>
+    <div class="step active" onclick="goStep(4)"><div class="dot">4</div><div class="lbl">Flujo<br>de Caja</div></div>
+    <div class="step" onclick="goStep(5)"><div class="dot">5</div><div class="lbl">Inventario</div></div>
+    <div class="step" onclick="goStep(6)"><div class="dot">6</div><div class="lbl">Costos Prod.<br><small style="font-size:9px">(opcional)</small></div></div>
+    <div class="step" onclick="goStep(7)"><div class="dot">7</div><div class="lbl">Adjuntos</div></div>
+    <div class="step" onclick="goStep(8)"><div class="dot">8</div><div class="lbl">Dictamen<br>Analista</div></div>
+  </div>
+
+  <!-- ───── Context bar ───── -->
+  <div class="context-bar">
+    <span><b>Cliente:</b> MOSQUERA SACARIAS, Mirella</span>
+    <span><b>DNI:</b> 45782931</span>
+    <span><b>Producto:</b> Capital de Trabajo</span>
+    <span><b>Solicitado:</b> S/ 8,500.00</span>
+    <span><b>Estado:</b> <span class="badge">PENDIENTE</span></span>
+  </div>
+
+  <!-- ───── Form area ───── -->
+  <div class="form-area">
+
+    <!-- STEP 1 — Ficha del Cliente -->
+    <div class="step-content" id="s1">
+      <h2>1 · Ficha del Cliente</h2>
+      <p class="step-desc">Datos personales, cónyuge, dependientes y domicilio del titular.</p>
+
+      <div class="subsec">Datos personales</div>
+      <div class="form-row cols-4">
+        <div class="field"><label>Apellido paterno <span class="req">*</span></label><input value="MOSQUERA"></div>
+        <div class="field"><label>Apellido materno <span class="req">*</span></label><input value="SACARIAS"></div>
+        <div class="field"><label>Nombres <span class="req">*</span></label><input value="Mirella"></div>
+        <div class="field"><label>Estado civil <span class="req">*</span></label>
+          <select><option>Soltero(a)</option><option selected>Casado(a)</option><option>Conviviente</option><option>Viudo(a)</option></select>
+        </div>
+      </div>
+
+      <div class="subsec">Cónyuge y dependientes</div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Cónyuge</label><input value="Rodríguez Salas, Pedro"></div>
+        <div class="field"><label>N° de hijos</label><input type="number" value="3"></div>
+        <div class="field"><label>Hijos estudiando</label><input type="number" value="2"></div>
+      </div>
+
+      <div class="subsec">Domicilio</div>
+      <div class="form-row cols-3">
+        <div class="field"><label>Tipo de zona</label>
+          <select><option>URB</option><option selected>AAHH</option><option>PPJJ</option></select>
+        </div>
+        <div class="field"><label>Tenencia</label>
+          <div class="pill-group">
+            <input type="radio" id="t1" name="ten" checked><label for="t1">Propio</label>
+            <input type="radio" id="t2" name="ten"><label for="t2">Alquilado</label>
+            <input type="radio" id="t3" name="ten"><label for="t3">Familiares</label>
+          </div>
+        </div>
+        <div class="field"><label>Tiempo de residencia</label>
+          <select><option>1–3 años</option><option selected>3–5 años</option><option>Más de 5 años</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 — Negocio -->
+    <div class="step-content" id="s2">
+      <h2>2 · Negocio / Actividad Laboral</h2>
+      <p class="step-desc">Información del giro, ubicación y antigüedad del negocio.</p>
+      <div class="form-row cols-3">
+        <div class="field"><label>Tipo de persona</label>
+          <div class="pill-group">
+            <input type="radio" id="tp1" name="tp" checked><label for="tp1">Natural</label>
+            <input type="radio" id="tp2" name="tp"><label for="tp2">Jurídica</label>
+          </div>
+        </div>
+        <div class="field"><label>Giro</label><input value="Bodega · venta de abarrotes"></div>
+        <div class="field"><label>Categoría</label>
+          <select><option selected>Comercial</option><option>Productivo</option><option>Servicio</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 — Centrales de Riesgo -->
+    <div class="step-content" id="s3">
+      <h2>3 · Centrales de Riesgo</h2>
+      <p class="step-desc">Score, calificación buró y deuda total en el sistema financiero.</p>
+      <div class="form-row cols-4">
+        <div class="field"><label>Score <span class="req">*</span></label><input type="number" value="685"></div>
+        <div class="field"><label>Calificación buró <span class="req">*</span></label>
+          <select><option selected>NORMAL</option><option>CPP</option><option>Deficiente</option></select>
+        </div>
+        <div class="field"><label>Deuda total <span class="req">*</span></label><input value="S/ 3,200.00"></div>
+        <div class="field"><label>Entidades <span class="req">*</span></label><input type="number" value="2"></div>
+      </div>
+    </div>
+
+    <!-- STEP 4 — Flujo de Caja (ACTIVO) -->
+    <div class="step-content active" id="s4">
+      <h2>4 · Trabajo de Campo · Flujo de Caja del Negocio</h2>
+      <p class="step-desc">Levantamiento de ingresos y egresos durante la visita al cliente. Se calcula automáticamente la capacidad de pago.</p>
+
+      <div class="subsec">Ingresos del negocio y del hogar</div>
+      <table>
+        <thead><tr><th>Concepto</th><th>Frecuencia</th><th class="num">Monto unit.</th><th class="num">Veces/mes</th><th class="num">Total mensual</th></tr></thead>
+        <tbody>
+          <tr><td>Ventas diarias</td><td>Diario</td><td class="num"><input value="380.00"></td><td class="num"><input value="26"></td><td class="num"><b>S/ 9,880.00</b></td></tr>
+          <tr><td>Ventas fines de semana</td><td>Semanal</td><td class="num"><input value="450.00"></td><td class="num"><input value="4"></td><td class="num"><b>S/ 1,800.00</b></td></tr>
+          <tr><td>Otros ingresos del hogar</td><td>Mensual</td><td class="num"><input value="1500.00"></td><td class="num"><input value="1"></td><td class="num"><b>S/ 1,500.00</b></td></tr>
+          <tr class="total-row"><td colspan="4">Total ingresos</td><td class="num">S/ 13,180.00</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subsec">Egresos del negocio</div>
+      <table>
+        <thead><tr><th>Concepto</th><th class="num">Mensual</th></tr></thead>
+        <tbody>
+          <tr><td>Compra de mercadería</td><td class="num"><input value="7800.00"></td></tr>
+          <tr><td>Alquiler del puesto</td><td class="num"><input value="450.00"></td></tr>
+          <tr><td>Servicios y transporte</td><td class="num"><input value="420.00"></td></tr>
+          <tr class="total-row"><td>Total egresos negocio</td><td class="num">S/ 8,670.00</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subsec">Egresos del hogar</div>
+      <table>
+        <thead><tr><th>Concepto</th><th class="num">Mensual</th></tr></thead>
+        <tbody>
+          <tr><td>Alimentación + servicios vivienda</td><td class="num"><input value="1480.00"></td></tr>
+          <tr><td>Educación hijos</td><td class="num"><input value="650.00"></td></tr>
+          <tr><td>Otras deudas (cuota mensual)</td><td class="num"><input value="420.00"></td></tr>
+          <tr class="total-row"><td>Total egresos hogar</td><td class="num">S/ 2,550.00</td></tr>
+        </tbody>
+      </table>
+
+      <div class="kpis">
+        <div class="kpi success"><small>Utilidad neta mensual</small><strong>S/ 1,960.00</strong></div>
+        <div class="kpi"><small>Cuota propuesta (12 m)</small><strong>S/ 850.00</strong></div>
+        <div class="kpi success"><small>Ratio cuota / disponibilidad</small><strong>43.4 %</strong></div>
+      </div>
+    </div>
+
+    <!-- STEP 5 — Inventario -->
+    <div class="step-content" id="s5">
+      <h2>5 · Inventario / Mercadería</h2>
+      <p class="step-desc">Valorización del stock actual del negocio.</p>
+      <table>
+        <thead><tr><th>Producto</th><th>Unidad</th><th class="num">Cant.</th><th class="num">Costo</th><th class="num">Total</th></tr></thead>
+        <tbody>
+          <tr><td><input value="Arroz x 50kg"></td><td><input value="Saco"></td><td class="num"><input value="15"></td><td class="num"><input value="135.00"></td><td class="num"><b>S/ 2,025.00</b></td></tr>
+          <tr><td><input value="Aceite Primor 1L"></td><td><input value="Caja"></td><td class="num"><input value="8"></td><td class="num"><input value="95.00"></td><td class="num"><b>S/ 760.00</b></td></tr>
+          <tr class="total-row"><td colspan="4">Total inventario</td><td class="num">S/ 3,685.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- STEP 6 — Costos Producción -->
+    <div class="step-content" id="s6">
+      <h2>6 · Costos de Producción</h2>
+      <p class="step-desc">Solo aplica a giros productivos / agropecuarios. Se omite para el giro actual (comercial).</p>
+      <div style="padding: 40px; text-align: center; color: #9CA3AF; background: #F9FAFB; border-radius: 8px;">
+        Este paso se omite por giro comercial. Continuar al siguiente.
+      </div>
+    </div>
+
+    <!-- STEP 7 — Adjuntos -->
+    <div class="step-content" id="s7">
+      <h2>7 · Adjuntos del Expediente</h2>
+      <p class="step-desc">Croquis, fotos de fachada y otros documentos de verificación.</p>
+    </div>
+
+    <!-- STEP 8 — Dictamen -->
+    <div class="step-content" id="s8">
+      <h2>8 · Dictamen del Analista</h2>
+      <p class="step-desc">Decisión final y envío a Comité de Créditos.</p>
+      <div class="form-row cols-3">
+        <div class="field"><label>Monto aprobado <span class="req">*</span></label><input value="S/ 8,500.00"></div>
+        <div class="field"><label>Plazo (meses) <span class="req">*</span></label><input type="number" value="12"></div>
+        <div class="field"><label>Estado <span class="req">*</span></label>
+          <select><option>PENDIENTE</option><option selected>APROBADO</option><option>RECHAZADO</option></select>
+        </div>
+      </div>
+      <div class="field" style="margin-top: 12px;">
+        <label>Observaciones del analista <span class="req">*</span></label>
+        <textarea rows="3">Cliente con flujo de caja sólido y sin morosidad. Se aprueba por el monto solicitado.</textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── Nav footer ───── -->
+  <div class="nav-footer">
+    <div class="progress-text">Paso <b>4</b> de <b>8</b> · <span id="pct">37 % completado</span></div>
+    <div class="nav-buttons">
+      <button class="btn btn-ghost" onclick="goStep(currentStep-1)">← Anterior</button>
+      <button class="btn btn-secondary">💾 Guardar borrador</button>
+      <button class="btn btn-primary" onclick="goStep(currentStep+1)">Siguiente →</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentStep = 4;
+  function goStep(n) {
+    if (n < 1 || n > 8) return;
+    document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      const stepNum = i + 1;
+      if (stepNum < n) el.classList.add('done');
+      else if (stepNum === n) el.classList.add('active');
+      // Update dot content
+      const dot = el.querySelector('.dot');
+      if (stepNum < n) dot.textContent = '✓';
+      else dot.textContent = stepNum;
+    });
+    currentStep = n;
+    document.querySelector('.progress-text').innerHTML =
+      `Paso <b>${n}</b> de <b>8</b> · ${Math.round((n-1)/8 * 100)} % completado`;
+  }
+</script>
+</body>
+</html>

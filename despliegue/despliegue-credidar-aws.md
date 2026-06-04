@@ -119,6 +119,30 @@ psql -U dbSeusCar -h localhost -d dbCrediCarSeus   # debe entrar; salir con \q
 
 ## 6. Archivo `.env` (versión final)
 
+### 6.1 Generar los secretos JWT
+
+El backend firma los tokens con **HS256** (`JwtService` → `Keys.hmacShaKeyFor(secret.getBytes(UTF_8))`),
+que exige una clave de **mínimo 256 bits = 32 bytes**. Como usa los bytes UTF-8 del string, el
+secreto debe tener **al menos 32 caracteres** (usamos 64 bytes hex = 128 chars para margen).
+
+**No se escriben a mano ni se versionan.** Genéralos en el servidor con `openssl`:
+
+```bash
+# Genera DOS secretos distintos (hex evita / + = $ que rompen el parseo del .env)
+echo "JWT_SECRET=$(openssl rand -hex 64)"
+echo "JWT_REFRESH_SECRET=$(openssl rand -hex 64)"
+```
+
+Copia cada valor impreso al `.env` (abajo). Reglas:
+- **Distintos entre sí**: `JWT_SECRET` ≠ `JWT_REFRESH_SECRET`.
+- **Distintos por ambiente**: dev / calidad / producción cada uno el suyo.
+- **Nunca al repo**: en este manual quedan enmascarados (`<JWT_SECRET>`); los valores reales solo
+  viven en el `.env` del servidor (chmod 600) y, opcionalmente, en tu vault (`C:\AWS-DAR\`).
+- **Rotación**: cambiar el secreto invalida todas las sesiones activas (los usuarios deben
+  re-loguearse). Es lo esperado.
+
+### 6.2 Escribir el `.env`
+
 ```bash
 nano /home/ubuntu/app/.env
 chmod 600 /home/ubuntu/app/.env
@@ -129,7 +153,7 @@ DB_URL=jdbc:postgresql://localhost:5432/dbCrediCarSeus
 DB_USERNAME=dbSeusCar
 DB_PASSWORD=<DB_PASSWORD>
 
-# ── JWT — obligatorios por variable de entorno ──
+# ── JWT — obligatorios (generar con openssl, ver §6.1) ──
 JWT_SECRET=<JWT_SECRET>
 JWT_REFRESH_SECRET=<JWT_REFRESH_SECRET>
 JWT_EXPIRATION=600000

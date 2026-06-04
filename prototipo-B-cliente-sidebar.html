@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo B · Cliente (sidebar + scroll) — Reelige</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #F3F5F9; color: #1F2937; padding: 22px; }
+  .container { max-width: 1240px; margin: 0 auto; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #4f8ef5 0%, #1a4fc4 100%);
+    color: white; border-radius: 10px; padding: 16px 24px; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(31,71,136,.15); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .icon { width: 36px; height: 36px; background: rgba(255,255,255,.18); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .brand h1 { font-size: 17px; font-weight: 700; line-height: 1.1; }
+  .brand small { display: block; font-weight: 400; font-size: 11px; opacity: .85; }
+  .header .right { text-align: right; font-size: 12px; opacity: .9; }
+  .header .right strong { display: block; font-size: 14px; }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
+
+  /* Sidebar */
+  .sidebar { background: white; border-radius: 10px; padding: 14px; position: sticky; top: 22px;
+    align-self: start; height: fit-content; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .sidebar h3 { font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #F3F4F6; }
+  .sidebar a { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px;
+    font-size: 13px; color: #4B5563; text-decoration: none; margin-bottom: 2px;
+    cursor: pointer; transition: all .15s; border-left: 3px solid transparent; }
+  .sidebar a:hover { background: #F3F5F9; }
+  .sidebar a.active { background: #EFF6FF; color: #1F4788; font-weight: 600; border-left-color: #1F4788; }
+  .sidebar a .num { width: 22px; height: 22px; border-radius: 50%; background: #E5E7EB; color: #6B7280;
+    font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sidebar a.active .num { background: #1F4788; color: white; }
+  .sidebar a.done .num { background: #10B981; color: white; }
+
+  .sidebar .progress-block { margin-top: 16px; padding: 10px; background: #F8FAFD; border-radius: 6px; }
+  .sidebar .progress-block small { font-size: 11px; color: #6B7280; }
+  .sidebar .bar { height: 6px; background: #E5E7EB; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .sidebar .bar-fill { height: 100%; background: linear-gradient(90deg, #4f8ef5, #1a4fc4); width: 50%; transition: width .3s; }
+  .sidebar .progress-block strong { display: block; margin-top: 4px; font-size: 13px; color: #1F4788; }
+
+  /* Content */
+  .content { display: flex; flex-direction: column; gap: 14px; }
+
+  .section { background: white; border-radius: 10px; padding: 22px 26px; scroll-margin-top: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05); border-left: 4px solid #1F4788; }
+  .section.new { border-left-color: #10B981; background: #F7FEFB; }
+  .section.optional { border-left-color: #F59E0B; }
+
+  .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    padding-bottom: 10px; border-bottom: 1px solid #F3F4F6; }
+  .section-head .num { width: 28px; height: 28px; border-radius: 50%; background: #1F4788; color: white;
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .section.new .section-head .num { background: #10B981; }
+  .section.optional .section-head .num { background: #F59E0B; }
+  .section-head h2 { font-size: 16px; font-weight: 700; color: #1F2937; flex: 1; }
+  .section-head .badge { font-size: 10px; padding: 3px 9px; border-radius: 10px; font-weight: 700; }
+  .badge-new { background: #D1FAE5; color: #065F46; }
+  .badge-opt { background: #FEF3C7; color: #92400E; }
+  .badge-req { background: #FEE2E2; color: #991B1B; }
+
+  /* Form grid */
+  .form-row { display: grid; gap: 14px; margin-bottom: 12px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .cols-2-1 { grid-template-columns: 2fr 1fr; }
+  .cols-3-1 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .field label { display: block; font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; }
+  .field label .req { color: #DC2626; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 11px; font: inherit; font-size: 13px;
+    border: 1px solid #D1D5DB; border-radius: 6px; background: white; }
+  .field input:focus { outline: 2px solid #4f8ef5; outline-offset: -1px; border-color: #4f8ef5; }
+
+  .subsec { font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase;
+    letter-spacing: .5px; margin: 16px 0 8px 0; padding-bottom: 4px; border-bottom: 1px dashed #E5E7EB; }
+  .subsec:first-of-type { margin-top: 0; }
+
+  /* Pills */
+  .pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill-group label { padding: 7px 14px; border: 1px solid #D1D5DB; border-radius: 18px;
+    font-size: 12px; cursor: pointer; background: white; user-select: none; }
+  .pill-group input { display: none; }
+  .pill-group input:checked + label { background: #1F4788; color: white; border-color: #1F4788; }
+
+  /* References */
+  .ref-row { background: #F8FAFD; padding: 10px; border-radius: 6px; margin-bottom: 8px;
+    display: grid; grid-template-columns: 1fr 2fr 1fr 36px; gap: 8px; align-items: end; }
+  .ref-row input { padding: 6px 8px; font-size: 12px; }
+  .btn-del { background: #FEE2E2; color: #DC2626; border: 0; padding: 6px 10px;
+    border-radius: 4px; cursor: pointer; }
+  .btn-add { background: white; color: #1F4788; border: 1px solid #1F4788; padding: 7px 16px;
+    border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  /* Uploads */
+  .uploads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .upload-card { border: 2px dashed #D1D5DB; border-radius: 8px; padding: 16px 10px; text-align: center;
+    cursor: pointer; transition: all .15s; background: #FAFBFD; }
+  .upload-card:hover { border-color: #4f8ef5; background: #F0F6FF; }
+  .upload-card .ico { font-size: 24px; }
+  .upload-card .lbl { font-size: 11px; color: #374151; margin-top: 6px; font-weight: 600; line-height: 1.2; }
+  .upload-card .hint { font-size: 9px; color: #9CA3AF; margin-top: 2px; }
+  .upload-card.has-file { border: 2px solid #10B981; background: #F0FDF4; }
+
+  /* Excedente highlight */
+  .excedente { background: linear-gradient(135deg, #D1FAE5 0%, #BBF7D0 100%); color: #065F46;
+    padding: 14px 18px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .excedente strong { font-size: 18px; }
+  .excedente small { font-size: 11px; }
+
+  /* Actions sticky footer */
+  .actions { background: white; border-radius: 10px; padding: 14px 22px; margin-top: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.04); position: sticky; bottom: 12px; }
+  .btn { padding: 9px 18px; border-radius: 6px; border: 0; font: inherit; font-size: 13px;
+    font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #1F4788; color: white; }
+  .btn-secondary { background: white; color: #1F4788; border: 1px solid #1F4788; }
+  .btn-ghost { background: transparent; color: #6B7280; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="icon">🏛</div>
+      <div>
+        <h1>Reelige</h1>
+        <small>Sistema de Gestión Financiera</small>
+      </div>
+    </div>
+    <div class="right">
+      <strong>Registro de Cliente</strong>
+      <span>MOSQUERA SACARIAS, Mirella · DNI 45782931</span>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- ───── Sidebar ───── -->
+    <div class="sidebar">
+      <h3>Secciones</h3>
+      <a href="#sec1" class="done"><span class="num">✓</span>Identidad</a>
+      <a href="#sec2" class="done"><span class="num">✓</span>Cónyuge / Hijos</a>
+      <a href="#sec3" class="active"><span class="num">3</span>Domicilio</a>
+      <a href="#sec4"><span class="num">4</span>Referencias</a>
+      <a href="#sec5"><span class="num">5</span>Situación económica</a>
+      <a href="#sec6"><span class="num">6</span>Negocio</a>
+      <a href="#sec7"><span class="num">7</span>Adjuntos</a>
+
+      <div class="progress-block">
+        <small>Progreso del registro</small>
+        <div class="bar"><div class="bar-fill"></div></div>
+        <strong>50 % completo</strong>
+      </div>
+    </div>
+
+    <!-- ───── Content ───── -->
+    <div class="content">
+
+      <!-- SECCIÓN 1 — Identidad -->
+      <div class="section" id="sec1">
+        <div class="section-head">
+          <div class="num">1</div>
+          <h2>Información de Identidad</h2>
+          <span class="badge badge-req">Obligatoria</span>
+        </div>
+
+        <div class="form-row cols-3">
+          <div class="field"><label>Tipo documento <span class="req">*</span></label>
+            <select><option>DNI</option><option>RUC</option><option>Pasaporte</option><option>C.E.</option></select>
+          </div>
+          <div class="field"><label>Número de documento <span class="req">*</span></label><input value="45782931"></div>
+          <div class="field"><label>Fecha de nacimiento</label><input type="date" value="1985-04-12"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Apellido paterno <span class="req">*</span></label><input value="MOSQUERA"></div>
+          <div class="field"><label>Apellido materno <span class="req">*</span></label><input value="SACARIAS"></div>
+          <div class="field"><label>Nombres <span class="req">*</span></label><input value="Mirella"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Sexo</label>
+            <div class="pill-group">
+              <input type="radio" id="sx1" name="sx"><label for="sx1">Masculino</label>
+              <input type="radio" id="sx2" name="sx" checked><label for="sx2">Femenino</label>
+            </div>
+          </div>
+          <div class="field"><label>Estado civil <span class="req">*</span></label>
+            <select><option>Soltero(a)</option><option selected>Casado(a)</option><option>Conviviente</option><option>Viudo(a)</option></select>
+          </div>
+          <div class="field"><label>Email</label><input value="mirella.mosquera@gmail.com"></div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2 — Cónyuge -->
+      <div class="section new" id="sec2">
+        <div class="section-head">
+          <div class="num">2</div>
+          <h2>Cónyuge y Dependientes</h2>
+          <span class="badge badge-new">NUEVO</span>
+        </div>
+        <div class="form-row cols-2-1">
+          <div class="field"><label>Nombre completo del cónyuge</label><input value="Rodríguez Salas, Pedro"></div>
+          <div class="field"><label>DNI del cónyuge</label><input value="42118567"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>N° de hijos</label><input type="number" value="3"></div>
+          <div class="field"><label>Hijos estudiando</label><input type="number" value="2"></div>
+          <div class="field"><label>Total dependientes</label><input value="5"></div>
+        </div>
+        <div class="field">
+          <label>Nivel educativo (hijos)</label>
+          <div class="pill-group">
+            <input type="checkbox" id="ed1"><label for="ed1">Primaria</label>
+            <input type="checkbox" id="ed2" checked><label for="ed2">Secundaria</label>
+            <input type="checkbox" id="ed3"><label for="ed3">Técnica</label>
+            <input type="checkbox" id="ed4" checked><label for="ed4">Superior</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 3 — Domicilio -->
+      <div class="section" id="sec3">
+        <div class="section-head">
+          <div class="num">3</div>
+          <h2>Ubicación y Vivienda</h2>
+          <span class="badge badge-req">Obligatoria</span>
+        </div>
+
+        <div class="subsec">Dirección del domicilio</div>
+        <div class="form-row cols-3-1">
+          <div class="field"><label>Tipo de zona</label>
+            <select><option>URB</option><option selected>AAHH</option><option>PPJJ</option><option>Coop. Vivienda</option><option>Conj. Hab.</option><option>Asoc. Comerc.</option></select>
+          </div>
+          <div class="field"><label>Nombre zona</label><input value="Las Lomas Sur"></div>
+          <div class="field"><label>Tipo vía</label>
+            <select><option>Av.</option><option selected>Jr.</option><option>Calle</option><option>Pje.</option></select>
+          </div>
+          <div class="field"><label>Dirección + número <span class="req">*</span></label><input value="Las Begonias 245"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Departamento</label><input value="Lima"></div>
+          <div class="field"><label>Provincia</label><input value="Lima"></div>
+          <div class="field"><label>Distrito</label><input value="San Juan de Lurigancho"></div>
+        </div>
+
+        <div class="subsec">Detalles de la vivienda</div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Tenencia</label>
+            <div class="pill-group">
+              <input type="radio" id="t1" name="ten" checked><label for="t1">Propio</label>
+              <input type="radio" id="t2" name="ten"><label for="t2">Alquilado</label>
+              <input type="radio" id="t3" name="ten"><label for="t3">Familiares</label>
+              <input type="radio" id="t4" name="ten"><label for="t4">Ambulante</label>
+            </div>
+          </div>
+          <div class="field"><label>Tiempo de residencia</label>
+            <select><option>Menos de 1 año</option><option>1–3 años</option><option selected>3–5 años</option><option>Más de 5 años</option></select>
+          </div>
+          <div class="field"><label>Construcción</label>
+            <select><option selected>Material noble</option><option>Madera</option><option>Adobe</option><option>Mixto</option></select>
+          </div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Propietario (si alquila)</label><input placeholder="N/A si vivienda propia"></div>
+          <div class="field"><label>Teléfono propietario</label><input placeholder="N/A si vivienda propia"></div>
+          <div class="field"><label>N° suministro <span class="req">*</span></label><input value="0814578"></div>
+        </div>
+        <div class="field" style="margin-top: 6px;">
+          <label>Referencia / Croquis (texto)</label>
+          <textarea rows="2">Portón verde, frente al parque infantil del AAHH.</textarea>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 4 — Referencias -->
+      <div class="section" id="sec4">
+        <div class="section-head">
+          <div class="num">4</div>
+          <h2>Referencias de Contacto</h2>
+          <span class="badge badge-req">Mínimo 1</span>
+        </div>
+        <div class="ref-row">
+          <input value="Hermano">
+          <input value="Mosquera Sacarias, Luis">
+          <input value="987654321">
+          <button class="btn-del">🗑</button>
+        </div>
+        <div class="ref-row">
+          <input value="Vecino">
+          <input value="Quispe Mamani, Rosa">
+          <input value="912345678">
+          <button class="btn-del">🗑</button>
+        </div>
+        <button class="btn-add">+ Agregar referencia</button>
+      </div>
+
+      <!-- SECCIÓN 5 — Situación Económica -->
+      <div class="section" id="sec5">
+        <div class="section-head">
+          <div class="num">5</div>
+          <h2>Situación Económica</h2>
+          <span class="badge badge-req">Obligatoria</span>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Tipo de empleo</label>
+            <select><option>Dependiente</option><option selected>Independiente</option><option>Informal</option><option>Desempleado</option></select>
+          </div>
+          <div class="field"><label>Ocupación / Cargo <span class="req">*</span></label><input value="Comerciante"></div>
+          <div class="field"><label>Empresa donde labora</label><input placeholder="N/A si independiente"></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="field"><label style="color: #059669;">↑ Ingresos mensuales (S/) <span class="req">*</span></label>
+            <input type="number" value="3200" style="border-color: #6ee7b7;"></div>
+          <div class="field"><label style="color: #DC2626;">↓ Gastos mensuales (S/) <span class="req">*</span></label>
+            <input type="number" value="1500" style="border-color: #fca5a5;"></div>
+        </div>
+        <div class="excedente" style="margin-top: 10px;">
+          <div><small>Excedente neto disponible</small></div>
+          <strong>S/ 1,700.00</strong>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 6 — Negocio -->
+      <div class="section new" id="sec6">
+        <div class="section-head">
+          <div class="num">6</div>
+          <h2>Negocio · Actividad Laboral</h2>
+          <span class="badge badge-new">NUEVO</span>
+        </div>
+        <div class="form-row cols-4">
+          <div class="field"><label>Tipo de persona</label>
+            <select><option selected>Natural</option><option>Natural c/ RUC</option><option>Jurídica</option></select>
+          </div>
+          <div class="field"><label>Categoría</label>
+            <select><option selected>Comercial</option><option>Productivo</option><option>Servicio</option><option>Consumo</option></select>
+          </div>
+          <div class="field"><label>Antigüedad del negocio</label><input value="6 años"></div>
+          <div class="field"><label>RUC (si aplica)</label><input placeholder="—"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Giro del negocio</label><input value="Bodega · venta de abarrotes"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Dirección del negocio</label><input value="Mercado Las Lomas Pto. 142"></div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 7 — Adjuntos -->
+      <div class="section new" id="sec7">
+        <div class="section-head">
+          <div class="num">7</div>
+          <h2>Adjuntos del Expediente</h2>
+          <span class="badge badge-new">NUEVO</span>
+        </div>
+        <div class="uploads">
+          <div class="upload-card has-file">
+            <div class="ico">📍</div>
+            <div class="lbl">Croquis del negocio</div>
+            <div class="hint">croquis_negocio.jpg · 142 KB</div>
+          </div>
+          <div class="upload-card has-file">
+            <div class="ico">🏠</div>
+            <div class="lbl">Croquis del domicilio</div>
+            <div class="hint">croquis_casa.jpg · 98 KB</div>
+          </div>
+          <div class="upload-card">
+            <div class="ico">📷</div>
+            <div class="lbl">Foto fachada negocio</div>
+            <div class="hint">Click para subir</div>
+          </div>
+          <div class="upload-card">
+            <div class="ico">📷</div>
+            <div class="lbl">Foto fachada domicilio</div>
+            <div class="hint">Click para subir</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sticky actions -->
+      <div class="actions">
+        <button class="btn btn-ghost">← Volver al listado</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary">💾 Guardar borrador</button>
+          <button class="btn btn-primary">Registrar Cliente</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Resaltar sección activa al hacer scroll
+  const links = document.querySelectorAll('.sidebar a');
+  const sections = document.querySelectorAll('.section');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      const rect = s.getBoundingClientRect();
+      if (rect.top < 200) current = s.id;
+    });
+    links.forEach(l => {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo A · Aprobación Crediticia (stack vertical, corporativo) — Reelige</title>
+<style>
+  /* ════════════════════════════════════════════════════════════
+     PALETA CORPORATIVA NAVY/GRIS — sin gradientes llamativos
+  ════════════════════════════════════════════════════════════ */
+  :root {
+    --navy:        #1a3a5c;
+    --navy-soft:   #e8f0f9;
+    --navy-hover:  #153050;
+    --gray-50:     #f8fafc;
+    --gray-100:    #f1f5f9;
+    --gray-200:    #e2e8f0;
+    --gray-300:    #cbd5e1;
+    --gray-500:    #64748b;
+    --gray-700:    #334155;
+    --gray-900:    #0f172a;
+    --bg-page:     #f1f5f9;
+    --bg-card:     #ffffff;
+    --bg-readonly: #fafbfc;
+    --success:     #198754;
+    --success-soft:#d1e7dd;
+    --danger:      #dc3545;
+    --danger-soft: #f8d7da;
+    --warn-soft:   #fff8e1;
+    --warn-text:   #856404;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-page); color: var(--gray-900); padding: 20px; font-size: 13px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header { background: var(--bg-card); border: 1px solid var(--gray-200);
+    border-radius: 8px; padding: 14px 22px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+  .header .title { display: flex; align-items: center; gap: 12px; }
+  .header .ico { width: 38px; height: 38px; border-radius: 8px; background: var(--navy-soft);
+    color: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .header h1 { font-size: 16px; font-weight: 700; color: var(--gray-900); }
+  .header small { color: var(--gray-500); font-size: 11px; display: block; margin-top: 1px; }
+  .header .right { font-size: 11px; color: var(--gray-500); text-align: right; }
+  .header .right b { color: var(--navy); font-size: 13px; display: block; }
+
+  /* ════════════════════════════════════════════════════════════
+     CARD BASE
+  ════════════════════════════════════════════════════════════ */
+  .card { background: var(--bg-card); border: 1px solid var(--gray-200);
+    border-radius: 8px; margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04); overflow: hidden; }
+
+  .card-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-bottom: 1px solid var(--gray-200); background: var(--gray-50); }
+  .card-header .left { display: flex; align-items: center; gap: 10px; }
+  .card-header .num { width: 26px; height: 26px; border-radius: 6px;
+    background: var(--navy); color: white; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700; }
+  .card-header h3 { font-size: 14px; font-weight: 700; color: var(--navy); }
+  .card-header .badge { font-size: 10px; padding: 3px 10px; border-radius: 50rem;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .badge-lock { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-200); }
+  .badge-edit { background: var(--warn-soft); color: var(--warn-text); border: 1px solid #ffe69c; }
+  .badge-ok   { background: var(--success-soft); color: #0f5132; border: 1px solid #a3cfbb; }
+
+  /* ── CARDS DE SOLO LECTURA (1 y 2) — atenuadas ── */
+  .card.readonly { background: var(--bg-readonly); }
+  .card.readonly .card-body { color: var(--gray-700); }
+
+  /* ── CARDS EDITABLES (3 y 4) — prominentes ── */
+  .card.editable { border-left: 4px solid var(--navy); }
+  .card.editable .card-header { background: var(--navy-soft); }
+  .card.editable .card-header h3 { color: var(--navy); }
+
+  .card-body { padding: 16px 20px; }
+
+  /* ════════════════════════════════════════════════════════════
+     SECCIÓN 1 — Datos del Cliente (read-only, grid info)
+  ════════════════════════════════════════════════════════════ */
+  .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 22px; }
+  .info-grid .full { grid-column: 1 / -1; }
+  .info-item label { display: block; font-size: 10px; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; font-weight: 600; }
+  .info-item .val { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+  .info-item .sub { font-size: 11px; color: var(--gray-500); margin-top: 1px; }
+
+  /* ════════════════════════════════════════════════════════════
+     SECCIÓN 2 — Resumen Financiero (read-only, KPIs)
+  ════════════════════════════════════════════════════════════ */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: white; border: 1px solid var(--gray-200);
+    border-radius: 6px; padding: 12px 14px; }
+  .kpi label { display: block; font-size: 9.5px; color: var(--gray-500);
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; font-weight: 600; }
+  .kpi .val { font-size: 17px; font-weight: 700; color: var(--navy);
+    font-variant-numeric: tabular-nums; }
+  .kpi .val.success { color: var(--success); }
+  .kpi .val.danger { color: var(--danger); }
+  .kpi .meta { font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+
+  .ratio-bar { margin-top: 12px; }
+  .ratio-bar .lbl { display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--gray-500); margin-bottom: 4px; }
+  .ratio-bar .bar { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+  .ratio-bar .fill { height: 100%; background: var(--success); transition: width .4s; }
+  .ratio-bar .fill.warn { background: #ffc107; }
+
+  /* ════════════════════════════════════════════════════════════
+     SECCIÓN 3 — Comité de Crédito
+  ════════════════════════════════════════════════════════════ */
+  .comite-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+  .comite-table thead th { padding: 8px 12px; background: var(--gray-50);
+    color: var(--gray-500); font-weight: 600; text-align: left;
+    text-transform: uppercase; font-size: 10px; letter-spacing: .04em;
+    border-bottom: 1px solid var(--gray-200); }
+  .comite-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); }
+  .comite-table tbody tr:last-child td { border-bottom: 0; }
+  .comite-table .miembro { font-weight: 600; color: var(--gray-900); }
+  .comite-table .rol { font-size: 11px; color: var(--gray-500); display: block; }
+  .vote-badge { display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 50rem; font-size: 11px; font-weight: 600; }
+  .vote-badge.aprobado { background: var(--success-soft); color: #0f5132; }
+  .vote-badge.rechazado { background: var(--danger-soft); color: #842029; }
+  .vote-badge.pendiente { background: var(--gray-100); color: var(--gray-500); }
+
+  .voto-summary { display: flex; gap: 14px; margin-bottom: 12px;
+    padding: 10px 14px; background: var(--gray-50);
+    border: 1px solid var(--gray-200); border-radius: 6px; }
+  .voto-summary .item { font-size: 11px; color: var(--gray-500); }
+  .voto-summary .item b { font-size: 16px; color: var(--navy);
+    font-weight: 700; display: block; }
+  .voto-summary .item.ok b { color: var(--success); }
+  .voto-summary .item.rec b { color: var(--danger); }
+
+  .form-add-vote { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px;
+    align-items: end; padding: 12px; background: white;
+    border: 1px dashed var(--gray-300); border-radius: 6px; margin-top: 8px; }
+  .form-add-vote label { display: block; font-size: 10px; color: var(--gray-500);
+    text-transform: uppercase; margin-bottom: 3px; font-weight: 600; letter-spacing: .04em; }
+  .form-add-vote select, .form-add-vote input { width: 100%; padding: 7px 10px;
+    font: inherit; font-size: 12px; border: 1px solid var(--gray-200);
+    border-radius: 5px; background: white; color: var(--gray-900); }
+
+  /* ════════════════════════════════════════════════════════════
+     SECCIÓN 4 — Resolución del Crédito
+  ════════════════════════════════════════════════════════════ */
+  .decision-buttons { display: flex; gap: 10px; margin: 6px 0 14px; }
+  .decision-btn { flex: 1; padding: 14px; border-radius: 8px;
+    border: 1.5px solid; background: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 700; font-size: 13px; text-transform: uppercase;
+    letter-spacing: .04em; transition: all .15s; }
+  .decision-btn-aprobar { border-color: var(--success); color: var(--success); }
+  .decision-btn-aprobar:hover, .decision-btn-aprobar.selected {
+    background: var(--success); color: white; box-shadow: 0 2px 8px rgba(25,135,84,.2); }
+  .decision-btn-rechazar { border-color: var(--danger); color: var(--danger); }
+  .decision-btn-rechazar:hover, .decision-btn-rechazar.selected {
+    background: var(--danger); color: white; box-shadow: 0 2px 8px rgba(220,53,69,.2); }
+
+  .form-row { display: grid; gap: 12px; margin-bottom: 12px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 2fr 1fr 1fr; }
+  .field label { display: block; font-size: 11px; color: var(--gray-700);
+    font-weight: 600; margin-bottom: 4px; text-transform: uppercase;
+    letter-spacing: .04em; }
+  .field label .req { color: var(--danger); }
+  .field input, .field select, .field textarea { width: 100%; padding: 8px 11px;
+    font: inherit; font-size: 13px; border: 1px solid var(--gray-200);
+    border-radius: 5px; background: white; color: var(--gray-900); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 0; border-color: var(--navy); box-shadow: 0 0 0 .15rem rgba(26,58,92,.10); }
+
+  .input-group { display: flex; }
+  .input-group .prefix { padding: 8px 12px; background: var(--gray-50);
+    border: 1px solid var(--gray-200); border-right: 0; border-radius: 5px 0 0 5px;
+    color: var(--gray-500); font-weight: 600; font-size: 12px; }
+  .input-group input { border-radius: 0 5px 5px 0; }
+
+  /* ── Footer ── */
+  .footer { background: var(--bg-card); border: 1px solid var(--gray-200);
+    border-radius: 8px; padding: 14px 20px; margin-top: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+  .btn { padding: 9px 18px; border-radius: 6px; border: 1px solid; font: inherit;
+    font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--navy); color: white; border-color: var(--navy); }
+  .btn-primary:hover { background: var(--navy-hover); }
+  .btn-outline { background: white; color: var(--navy); border-color: var(--gray-300); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="title">
+      <div class="ico">⚖</div>
+      <div>
+        <h1>Aprobación Crediticia · EXP-2026-0142</h1>
+        <small>Cliente: Quispe Mamani, Rosa Maria · DNI 45100001 · Pilcomayo</small>
+      </div>
+    </div>
+    <div class="right">
+      <b>EN COMITÉ</b>
+      <span>Solicitado: S/ 5,000.00 · 12 cuotas mensuales</span>
+    </div>
+  </div>
+
+  <!-- ════════ 1. DATOS DEL CLIENTE (read-only) ════════ -->
+  <div class="card readonly">
+    <div class="card-header">
+      <div class="left">
+        <div class="num">1</div>
+        <h3>Datos del Cliente y Solicitud</h3>
+      </div>
+      <span class="badge badge-lock">🔒 Solo lectura</span>
+    </div>
+    <div class="card-body">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Tipo / N° Documento</label>
+          <div class="val">DNI · 45100001</div>
+        </div>
+        <div class="info-item">
+          <label>Nombres</label>
+          <div class="val">Rosa Maria</div>
+        </div>
+        <div class="info-item">
+          <label>Apellido Paterno</label>
+          <div class="val">Quispe</div>
+        </div>
+        <div class="info-item">
+          <label>Apellido Materno</label>
+          <div class="val">Mamani</div>
+        </div>
+        <div class="info-item">
+          <label>Fecha Nacimiento</label>
+          <div class="val">12/04/1985</div>
+          <div class="sub">41 años · Femenino</div>
+        </div>
+        <div class="info-item">
+          <label>Estado Civil</label>
+          <div class="val">Casada</div>
+        </div>
+        <div class="info-item">
+          <label>Ocupación</label>
+          <div class="val">Comerciante</div>
+          <div class="sub">Independiente · 6 años</div>
+        </div>
+        <div class="info-item">
+          <label>Domicilio</label>
+          <div class="val">San Juan de Lurigancho</div>
+          <div class="sub">Lima · Lima</div>
+        </div>
+        <div class="info-item full">
+          <label>Dirección Completa</label>
+          <div class="val">Jr. Las Begonias 245 · AAHH Las Lomas Sur · S.J. Lurigancho</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ 2. RESUMEN FINANCIERO (read-only) ════════ -->
+  <div class="card readonly">
+    <div class="card-header">
+      <div class="left">
+        <div class="num">2</div>
+        <h3>Resumen Financiero de la Evaluación</h3>
+      </div>
+      <span class="badge badge-lock">🔒 Solo lectura</span>
+    </div>
+    <div class="card-body">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <label>Monto Solicitado</label>
+          <div class="val">S/ 5,000</div>
+          <div class="meta">12 cuotas mensuales</div>
+        </div>
+        <div class="kpi">
+          <label>Ingresos Netos</label>
+          <div class="val success">S/ 3,200</div>
+          <div class="meta">Mensuales</div>
+        </div>
+        <div class="kpi">
+          <label>Gastos Fijos</label>
+          <div class="val danger">S/ 1,500</div>
+          <div class="meta">Mensuales</div>
+        </div>
+        <div class="kpi">
+          <label>Excedente Neto</label>
+          <div class="val success">S/ 1,700</div>
+          <div class="meta">Capacidad de pago</div>
+        </div>
+        <div class="kpi">
+          <label>Cuota Estimada</label>
+          <div class="val">S/ 487.50</div>
+          <div class="meta">TEA 28%</div>
+        </div>
+        <div class="kpi">
+          <label>Ratio Endeudamiento</label>
+          <div class="val">28.7%</div>
+          <div class="meta">Cuota / Disponible</div>
+        </div>
+        <div class="kpi">
+          <label>Score Crediticio</label>
+          <div class="val success">685</div>
+          <div class="meta">Buró: NORMAL</div>
+        </div>
+        <div class="kpi">
+          <label>Deuda Sistema</label>
+          <div class="val">S/ 3,200</div>
+          <div class="meta">2 entidades</div>
+        </div>
+      </div>
+      <div class="ratio-bar">
+        <div class="lbl">
+          <span>Ratio Cuota / Excedente</span>
+          <span><b>28.7%</b> · Límite operativo 40%</span>
+        </div>
+        <div class="bar"><div class="fill" style="width: 28.7%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ 3. COMITÉ DE CRÉDITO (editable) ════════ -->
+  <div class="card editable">
+    <div class="card-header">
+      <div class="left">
+        <div class="num">3</div>
+        <h3>Comité de Crédito</h3>
+      </div>
+      <span class="badge badge-edit">✎ Editable</span>
+    </div>
+    <div class="card-body">
+      <div class="voto-summary">
+        <div class="item ok"><b>2</b>Aprobados</div>
+        <div class="item rec"><b>0</b>Rechazados</div>
+        <div class="item"><b>1</b>Pendiente</div>
+        <div class="item" style="margin-left:auto"><b>3</b>Total miembros</div>
+      </div>
+
+      <table class="comite-table">
+        <thead>
+          <tr>
+            <th>Miembro</th>
+            <th>Cargo</th>
+            <th>Voto</th>
+            <th>Comentario</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <span class="miembro">Pérez García, Juan</span>
+              <span class="rol">Supervisor de Crédito</span>
+            </td>
+            <td>Presidente del Comité</td>
+            <td><span class="vote-badge aprobado">✓ APROBADO</span></td>
+            <td>Cliente con buen historial y capacidad de pago holgada.</td>
+            <td>2026-05-18 14:32</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="miembro">López Canchumanya, Percy</span>
+              <span class="rol">Analista de Crédito</span>
+            </td>
+            <td>Vocal</td>
+            <td><span class="vote-badge aprobado">✓ APROBADO</span></td>
+            <td>Visita domiciliaria conforme. Negocio activo.</td>
+            <td>2026-05-19 09:15</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="miembro">Chu Vásquez, María</span>
+              <span class="rol">Analista de Crédito</span>
+            </td>
+            <td>Vocal</td>
+            <td><span class="vote-badge pendiente">⌛ PENDIENTE</span></td>
+            <td>—</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <form class="form-add-vote">
+        <div>
+          <label>Tu Voto</label>
+          <select>
+            <option>Aprobado</option>
+            <option>Rechazado</option>
+          </select>
+        </div>
+        <div>
+          <label>Comentario</label>
+          <input type="text" placeholder="Fundamenta tu voto...">
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button type="button" class="btn btn-primary">Registrar Voto</button>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button type="button" class="btn btn-outline">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ════════ 4. RESOLUCIÓN DEL CRÉDITO (editable) ════════ -->
+  <div class="card editable">
+    <div class="card-header">
+      <div class="left">
+        <div class="num">4</div>
+        <h3>Resolución del Crédito</h3>
+      </div>
+      <span class="badge badge-edit">✎ Acción requerida</span>
+    </div>
+    <div class="card-body">
+      <label class="field" style="margin-bottom:6px;">
+        <span style="font-size:11px;color:var(--gray-700);font-weight:600;text-transform:uppercase;letter-spacing:.04em;">
+          Decisión Final <span style="color:var(--danger)">*</span>
+        </span>
+      </label>
+      <div class="decision-buttons">
+        <button type="button" class="decision-btn decision-btn-aprobar selected">
+          ✓ APROBAR CRÉDITO
+        </button>
+        <button type="button" class="decision-btn decision-btn-rechazar">
+          ✗ RECHAZAR CRÉDITO
+        </button>
+      </div>
+
+      <div class="form-row cols-3">
+        <div class="field">
+          <label>Producto Crediticio <span class="req">*</span></label>
+          <select>
+            <option>Créditos Diarios — interés fijo</option>
+            <option>Campaña Escolar — Pagos Diarios</option>
+            <option>Capital de Trabajo MYPE</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Monto Final Aprobado (S/) <span class="req">*</span></label>
+          <div class="input-group">
+            <span class="prefix">S/</span>
+            <input type="number" value="5000">
+          </div>
+        </div>
+        <div class="field">
+          <label>Tasa Final (%) <span style="color:var(--gray-500);font-weight:400">Mensual</span></label>
+          <input type="number" value="2.5" step="0.1">
+        </div>
+      </div>
+
+      <div class="form-row cols-2">
+        <div class="field">
+          <label>N° Cuotas Final</label>
+          <input type="number" value="12">
+        </div>
+        <div class="field">
+          <label>Condiciones Especiales</label>
+          <input type="text" placeholder="Ej: Requiere aval, garantía...">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Comentario de la Resolución <span class="req">*</span></label>
+          <textarea rows="3" placeholder="Fundamente la resolución del crédito...">Cliente con flujo de caja sólido (excedente S/ 1,700/mes), historial NORMAL en buró y ratio cuota/disponible al 28.7%. Aprobado por unanimidad del comité.</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer acciones -->
+  <div class="footer">
+    <button class="btn btn-outline">← Volver al listado</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline">Guardar borrador</button>
+      <button class="btn btn-primary">✓ Confirmar Resolución</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

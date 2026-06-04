@@ -119,15 +119,23 @@ conversión manual a `$P{EMPRESA}`; se dejaron intactas a propósito.
 - ✅ **Mora Acumulada** (cartera clientes): el `0::numeric` se reemplazó por la
   deuda vencida pendiente: `SUM(cuota_total − monto_pagado)` de cuotas con
   `fecha_venc < hoy` y `estado <> 'PAGADO'` de los préstamos vigentes del cliente.
-- ⏳ **Total Mora** (cartera en mora): la mora-penalidad es **dinámica** (no se
-  almacena en cuotas pendientes; la calcula cobranza al pagar). Requiere invocar
-  el motor de mora (días hábiles vencidos × tasa). Nota: la tabla/CSV de cartera
-  en mora hoy **no muestra** esta columna, así que es baja prioridad.
+- ✅ **Total Mora** (cartera en mora): la mora-penalidad es **dinámica** (no se
+  almacena en cuotas pendientes; la calcula cobranza al pagar). Ahora se computa
+  invocando el motor de mora extraído (`MoraCalculator.paraCobranza`) por cada
+  cuota vencida dentro de `ReporteService.getCarteraMora`. El método se marcó
+  `@Transactional(readOnly = true)` para cargar el producto/préstamo (asociaciones
+  lazy) dentro de la transacción. Usa la misma regla que cobranza (días hábiles
+  vencidos × tasa, gracia, redondeo snapshot del préstamo, y "mora desde fecha fin"
+  para diarios con el flag).
 - ⏳ **Meta / % Meta** (cartera asesor): **no existe meta por asesor** en el modelo
   (las metas son por agencia). Decisión de producto: agregar metas por asesor o
   quitar las columnas de la vista.
-- ⏳ **Mora Total** (préstamos por asesor): el reporte `/prestamos-asesor` **no se
-  usa** en la UI actual. Sin acción hasta que se exponga.
+- ✅ **Mora Total** (préstamos por asesor): es un reporte de **colocación**
+  (cantidad + monto desembolsado). La mora real por asesor/analista ya está
+  cubierta por el reporte dedicado `getMoraAnalista()` (campo `carteraMora`,
+  desde SQL agregado). La columna `moraTotal` de `getPrestamosPorAsesor` se deja
+  en 0 a propósito (documentado en el código) para no duplicar la métrica. No es
+  una columna rota.
 
 ### Otros
 - Código muerto: `cronogramaRepo.agingMora()` se ejecuta y no se usa (`ReporteService.getCarteraMora`).

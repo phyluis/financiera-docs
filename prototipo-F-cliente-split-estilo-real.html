@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo F · Cliente split-view (estilo formulario actual) — Reelige</title>
+<style>
+  /* ═══════════════════════════════════════════════════════════
+     Estilo replicado del formulario actual en producción
+     ─ Labels UPPERCASE con letter-spacing
+     ─ Required marker (*) entre paréntesis en rojo
+     ─ Inputs con fondo gris-azulado pálido y borde sutil
+     ─ Títulos de sección en azul navy numerados
+     ─ Hint boxes con fondo celeste pálido
+     ═══════════════════════════════════════════════════════════ */
+  :root {
+    --primary:           #0d3a6e;    /* azul navy del form actual */
+    --primary-soft:      #e7f1ff;
+    --primary-hover:     #f0f6ff;
+
+    --section-title:     #0d3a6e;    /* azul oscuro para títulos */
+    --section-rule:      #e5edf5;    /* línea fina bajo títulos */
+
+    --label-text:        #1f2937;
+    --label-tracking:    .5px;
+
+    --input-bg:          #f1f5f9;    /* fondo gris-azulado muy claro */
+    --input-bg-focus:    #ffffff;
+    --input-border:      #e2e8f0;
+    --input-border-focus:#86b7fe;
+    --input-placeholder: #94a3b8;
+    --input-text:        #1f2937;
+
+    --danger:            #dc3545;
+    --danger-soft:       #f8d7da;
+
+    --success:           #198754;
+    --success-soft:      #d1e7dd;
+    --success-text:      #0f5132;
+
+    --warn:              #ffc107;
+    --warn-soft:         #fff3cd;
+    --warn-text:         #664d03;
+
+    --info-bg:           #cfe8ff;    /* hint box azul pálido */
+    --info-text:         #055160;
+    --info-border:       #b6d8f2;
+
+    --body-bg:           #f8f9fa;
+    --card-bg:           #ffffff;
+    --muted:             #6b7280;
+    --border-soft:       #e5e7eb;
+
+    --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.04);
+    --shadow-md: 0 .375rem .75rem rgba(0,0,0,.06);
+
+    --radius:            .5rem;
+    --radius-input:      .375rem;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--body-bg); color: var(--label-text); padding: 16px;
+    -webkit-font-smoothing: antialiased; font-size: 14px; }
+  .container { max-width: 1340px; margin: 0 auto; }
+
+  /* ─── Barra superior de acciones (Regresar / Nuevo / Eliminar) ─── */
+  .toolbar { background: var(--card-bg); border: 1px solid var(--border-soft);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px;
+    display: flex; gap: 8px; box-shadow: var(--shadow-sm); }
+  .btn-tool { background: var(--card-bg); color: var(--label-text);
+    border: 1px solid var(--border-soft); padding: 7px 14px;
+    border-radius: var(--radius-input); font-size: 13px; font-weight: 500;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    transition: all .15s; }
+  .btn-tool:hover { background: var(--body-bg); }
+  .btn-tool.danger { color: var(--danger); border-color: #f1aeb5; }
+  .btn-tool.danger:hover { background: var(--danger-soft); }
+
+  /* ─── Card header (Cliente: XXX + Solo lectura / Editar) ─── */
+  .card-header { background: var(--card-bg); border: 1px solid var(--border-soft);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--section-rule); }
+  .card-header .title { display: flex; align-items: center; gap: 10px;
+    font-size: 16px; font-weight: 700; color: var(--label-text); }
+  .card-header .title .ico { color: var(--primary); font-size: 18px; }
+  .card-header .actions { display: flex; gap: 8px; }
+  .badge-readonly { background: var(--card-bg); color: var(--muted);
+    border: 1px solid var(--border-soft); padding: 5px 12px;
+    border-radius: 50rem; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+  .btn-edit { background: var(--card-bg); color: var(--primary);
+    border: 1px solid var(--primary); padding: 5px 14px; border-radius: var(--radius-input);
+    font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .btn-edit:hover { background: var(--primary); color: white; }
+
+  /* ─── Layout split (form + panel resumen) ─── */
+  .split { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+
+  /* ─── Chips de navegación ─── */
+  .chips { background: var(--card-bg); border: 1px solid var(--border-soft);
+    border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px;
+    display: flex; gap: 6px; overflow-x: auto; box-shadow: var(--shadow-sm); }
+  .chip { padding: 7px 12px; border-radius: 50rem; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; border: 1px solid var(--border-soft);
+    color: var(--muted); display: inline-flex; align-items: center; gap: 6px;
+    transition: all .15s; background: var(--card-bg); text-decoration: none; }
+  .chip:hover { background: var(--body-bg); }
+  .chip .chk { width: 16px; height: 16px; border-radius: 50%; background: var(--border-soft);
+    color: var(--muted); font-size: 9px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; }
+  .chip.done { color: var(--success-text); border-color: #a3cfbb; background: var(--success-soft); }
+  .chip.done .chk { background: var(--success); color: white; }
+  .chip.incomplete { color: var(--warn-text); border-color: #ffe69c; background: var(--warn-soft); }
+  .chip.incomplete .chk { background: var(--warn); color: var(--warn-text); }
+  .chip.active { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+
+  /* ─── Cuerpo del formulario ─── */
+  .form-col { display: flex; flex-direction: column; gap: 0; }
+
+  .section-wrapper { background: var(--card-bg); border: 1px solid var(--border-soft);
+    padding: 22px 28px; box-shadow: var(--shadow-sm); border-radius: 0;
+    border-top: 0; scroll-margin-top: 12px; }
+  .section-wrapper:last-of-type { border-radius: 0 0 var(--radius) var(--radius); }
+  .section-wrapper + .section-wrapper { border-top: 0; }
+
+  /* ─── Título de sección numerado ─── */
+  .section-title {
+    color: var(--section-title); font-size: 15px; font-weight: 700;
+    letter-spacing: .3px; margin-bottom: 6px;
+    text-transform: uppercase; }
+  .section-rule { border: 0; border-bottom: 1px solid var(--section-rule);
+    margin-bottom: 18px; margin-top: 4px; }
+
+  /* ─── Sub-sección (Cónyuge y dependientes, Detalles vivienda) ─── */
+  .subsec { font-size: 12px; color: var(--muted); font-weight: 500;
+    margin: 18px 0 4px 0; }
+  .subsec-rule { border: 0; border-bottom: 1px solid var(--section-rule);
+    margin-bottom: 16px; }
+
+  /* ─── Filas y campos ─── */
+  .row { display: grid; gap: 16px; margin-bottom: 14px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .cols-3-1 { grid-template-columns: 1fr 1fr 1fr 1.5fr; }
+  .cols-2-1 { grid-template-columns: 2fr 1fr; }
+
+  .field label {
+    display: block; font-size: 11px; color: var(--label-text);
+    font-weight: 600; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: var(--label-tracking); }
+  .field label .req { color: var(--danger); font-weight: 700; margin-left: 2px; }
+
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 11px 14px; font: inherit; font-size: 14px;
+    color: var(--input-text); line-height: 1.4;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-input);
+    transition: all .15s; }
+  .field input::placeholder, .field textarea::placeholder { color: var(--input-placeholder); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 0; border-color: var(--input-border-focus);
+    background: var(--input-bg-focus);
+    box-shadow: 0 0 0 .2rem rgba(13,58,110,.10); }
+  .field input.is-invalid { border-color: var(--danger); }
+  .field input:disabled, .field select:disabled, .field textarea:disabled {
+    background: var(--input-bg); opacity: .8; cursor: not-allowed; }
+  .field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='%2364748b'%3E%3Cpath d='M3.204 5L8 10.481 12.796 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
+    padding-right: 36px; }
+
+  /* ─── Hint box (alerta info) ─── */
+  .hint-box {
+    background: var(--info-bg); color: var(--info-text);
+    border: 1px solid var(--info-border);
+    padding: 8px 14px; border-radius: var(--radius-input);
+    font-size: 12.5px; margin-top: -8px; }
+
+  /* ─── Pills (sexo, tenencia) ─── */
+  .pill-group { display: flex; gap: 6px; flex-wrap: wrap; padding: 4px 0; }
+  .pill-group label {
+    padding: 9px 16px; border: 1px solid var(--input-border);
+    border-radius: 50rem;
+    font-size: 13px; cursor: pointer; background: var(--input-bg);
+    user-select: none; color: var(--label-text);
+    transition: all .15s; text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .pill-group label:hover { background: var(--primary-hover); }
+  .pill-group input { display: none; }
+  .pill-group input:checked + label {
+    background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* ─── Referencias ─── */
+  .ref-row { background: var(--input-bg); padding: 10px; border-radius: var(--radius-input);
+    margin-bottom: 8px; border: 1px solid var(--input-border);
+    display: grid; grid-template-columns: 1fr 2fr 1fr 36px; gap: 8px; align-items: center; }
+  .ref-row input { padding: 8px 10px; font-size: 12.5px; }
+  .btn-del { background: transparent; color: var(--danger); border: 1px solid var(--danger);
+    padding: 7px 10px; border-radius: .25rem; cursor: pointer; font-size: 12px; }
+  .btn-del:hover { background: var(--danger); color: white; }
+  .btn-add { background: var(--card-bg); color: var(--success);
+    border: 1px solid var(--success); padding: 8px 16px;
+    border-radius: var(--radius-input); font-size: 12.5px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .btn-add:hover { background: var(--success); color: white; }
+
+  /* ─── Uploads ─── */
+  .uploads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .upload-card { border: 2px dashed var(--input-border); border-radius: var(--radius-input);
+    padding: 16px; text-align: center; cursor: pointer;
+    background: var(--input-bg); transition: all .15s; }
+  .upload-card:hover { border-color: var(--primary); background: var(--primary-hover); }
+  .upload-card .ico { font-size: 24px; color: var(--muted); }
+  .upload-card .lbl { font-size: 12.5px; color: var(--label-text); margin-top: 6px; font-weight: 600; }
+  .upload-card .hint { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .upload-card.has-file { border: 2px solid var(--success); background: var(--success-soft); }
+  .upload-card.has-file .ico { color: var(--success); }
+  .upload-card.has-file .lbl { color: var(--success-text); }
+
+  /* ════════ Panel resumen sticky (lateral derecho) ════════ */
+  .summary-col { position: sticky; top: 16px; align-self: start; }
+  .summary { background: var(--card-bg); border: 1px solid var(--border-soft);
+    border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); }
+
+  .client-card { text-align: center; padding-bottom: 14px;
+    border-bottom: 1px solid var(--section-rule); margin-bottom: 14px; }
+  .avatar { width: 64px; height: 64px; border-radius: 50%;
+    background: var(--primary); color: white; font-size: 22px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;
+    box-shadow: var(--shadow-sm); }
+  .client-card .name { font-size: 14px; font-weight: 700; color: var(--label-text); }
+  .client-card .doc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .client-card .tag { display: inline-block; margin-top: 8px; padding: 3px 10px; font-size: 10.5px;
+    background: var(--warn-soft); color: var(--warn-text);
+    border: 1px solid #ffe69c; border-radius: 12px; font-weight: 700; letter-spacing: .4px; }
+
+  .kpi-block { padding: 12px; background: var(--success-soft);
+    border: 1px solid #a3cfbb; border-radius: var(--radius-input);
+    margin-bottom: 14px; text-align: center; }
+  .kpi-block small { font-size: 10px; color: var(--success-text); text-transform: uppercase;
+    letter-spacing: .6px; font-weight: 600; }
+  .kpi-block .val { font-size: 20px; font-weight: 800; color: var(--success-text); margin-top: 2px; }
+
+  .completion h4 { font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .comp-row { display: grid; grid-template-columns: 1fr 38px; gap: 6px; align-items: center;
+    margin-bottom: 6px; cursor: pointer; padding: 4px; border-radius: 4px; }
+  .comp-row:hover { background: var(--body-bg); }
+  .comp-row .lbl { font-size: 12px; color: var(--label-text); display: flex; align-items: center; gap: 4px; }
+  .comp-row .pct { font-size: 10px; font-weight: 700; color: var(--muted); text-align: right; }
+  .comp-row .bar { grid-column: 1 / 3; height: 4px; background: var(--border-soft);
+    border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .comp-row .fill { height: 100%; background: var(--success); transition: width .3s; }
+  .comp-row .fill.partial { background: var(--warn); }
+
+  .alerts { background: var(--warn-soft); border: 1px solid #ffe69c;
+    padding: 10px 12px; border-radius: var(--radius-input); margin-top: 14px; }
+  .alerts h4 { font-size: 11px; color: var(--warn-text); font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: .5px; }
+  .alerts ul { list-style: none; padding-left: 4px; }
+  .alerts li { font-size: 12px; color: var(--warn-text); padding: 3px 0; line-height: 1.4; }
+  .alerts li::before { content: "•"; margin-right: 6px; color: var(--warn); }
+
+  .att-preview { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--section-rule); }
+  .att-preview h4 { font-size: 11px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .att-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted);
+    padding: 4px 0; }
+  .att-item.loaded { color: var(--success-text); font-weight: 600; }
+  .att-item .ico { font-size: 13px; }
+
+  .summary-actions { padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--section-rule);
+    display: flex; flex-direction: column; gap: 8px; }
+  .btn { padding: 10px 14px; border-radius: var(--radius-input); border: 1px solid transparent;
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;
+    transition: all .15s; }
+  .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+  .btn-primary:hover { background: #082c54; }
+  .btn-outline-primary { background: var(--card-bg); color: var(--primary); border-color: var(--primary); }
+  .btn-outline-primary:hover { background: var(--primary); color: white; }
+  .btn-outline-secondary { background: var(--card-bg); color: var(--muted);
+    border-color: var(--border-soft); font-size: 12px; }
+  .btn-outline-secondary:hover { background: var(--body-bg); color: var(--label-text); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Toolbar superior -->
+  <div class="toolbar">
+    <button class="btn-tool">← Regresar</button>
+    <button class="btn-tool">⊕ Nuevo</button>
+    <button class="btn-tool danger">🗑 Eliminar</button>
+  </div>
+
+  <!-- Card header (Cliente: XXX) -->
+  <div class="card-header">
+    <div class="title">
+      <span class="ico">👤</span>
+      Cliente: 85296345
+    </div>
+    <div class="actions">
+      <span class="badge-readonly">👁 Solo lectura</span>
+      <button class="btn-edit">✎ Editar</button>
+    </div>
+  </div>
+
+  <!-- Chips de navegación -->
+  <div class="chips" style="border-radius: 0;">
+    <a href="#sec1" class="chip done"><span class="chk">✓</span>Identidad</a>
+    <a href="#sec2" class="chip done"><span class="chk">✓</span>Cónyuge / Hijos</a>
+    <a href="#sec3" class="chip active"><span class="chk">3</span>Domicilio</a>
+    <a href="#sec4" class="chip incomplete"><span class="chk">!</span>Referencias (1/2)</a>
+    <a href="#sec5" class="chip done"><span class="chk">✓</span>Económica</a>
+    <a href="#sec6" class="chip done"><span class="chk">✓</span>Negocio</a>
+    <a href="#sec7" class="chip incomplete"><span class="chk">!</span>Adjuntos (2/4)</a>
+  </div>
+
+  <div class="split">
+
+    <!-- ══════ Formulario ══════ -->
+    <div class="form-col">
+
+      <!-- SEC 1 — Identidad -->
+      <div class="section-wrapper" id="sec1">
+        <h3 class="section-title">1. Información de Identidad</h3>
+        <hr class="section-rule">
+
+        <div class="row cols-3">
+          <div class="field">
+            <label>Tipo Doc.</label>
+            <select><option>DNI</option><option>RUC</option><option>Pasaporte</option><option>C.E.</option></select>
+          </div>
+          <div class="field">
+            <label>DNI <span class="req">(*)</span></label>
+            <input value="85296345">
+          </div>
+          <div class="field">
+            <label>Nombres <span class="req">(*)</span></label>
+            <input value="adasdas">
+          </div>
+        </div>
+
+        <div class="row cols-3">
+          <div class="field">
+            <label>Ap. Paterno <span class="req">(*)</span></label>
+            <input value="asdadasd">
+          </div>
+          <div class="field">
+            <label>Ap. Materno <span class="req">(*)</span></label>
+            <input value="asdasdas">
+          </div>
+          <div class="field">
+            <label>Fecha de Nacimiento</label>
+            <input type="date" placeholder="dd/mm/aaaa">
+          </div>
+        </div>
+
+        <div class="row cols-3">
+          <div class="field">
+            <label>Género</label>
+            <select><option selected>Masculino</option><option>Femenino</option></select>
+          </div>
+          <div class="field">
+            <label>Estado Civil</label>
+            <select><option>Soltero(a)</option><option selected>Casado(a)</option><option>Conviviente</option><option>Viudo(a)</option></select>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input value="asds@asdas.com">
+          </div>
+        </div>
+
+        <div class="subsec">Cónyuge y dependientes</div>
+        <hr class="subsec-rule">
+
+        <div class="row cols-4">
+          <div class="field" style="grid-column: span 2;">
+            <label>Nombre Completo del Cónyuge</label>
+            <input placeholder="Ej: Rodríguez Salas, Pedro">
+          </div>
+          <div class="field">
+            <label>DNI del Cónyuge</label>
+            <input placeholder="Ej: 42118567">
+          </div>
+          <div class="field">
+            <label>N° de Hijos</label>
+            <input type="number">
+          </div>
+        </div>
+
+        <div class="row cols-4">
+          <div class="field">
+            <label>Hijos Estudiando</label>
+            <input type="number">
+          </div>
+          <div class="field" style="grid-column: span 3;">
+            <label>Nivel Educativo (Hijos)</label>
+            <input placeholder="Ej: PRIMARIA, SECUNDARIA, TECNICA, SUPERIOR">
+          </div>
+        </div>
+
+        <div class="hint-box">
+          Separar por comas si aplica más de un nivel.
+        </div>
+      </div>
+
+      <!-- SEC 2 — Ubicación y Vivienda -->
+      <div class="section-wrapper" id="sec2">
+        <h3 class="section-title">2. Ubicación y Vivienda</h3>
+        <hr class="section-rule">
+
+        <div class="row cols-2">
+          <div class="field" style="grid-column: span 2;">
+            <label>Dirección Principal <span class="req">(*)</span></label>
+            <input value="asdas">
+          </div>
+        </div>
+
+        <div class="row cols-3-1">
+          <div class="field">
+            <label>Tipo de Zona</label>
+            <select><option>URB</option><option selected>AAHH</option><option>PPJJ</option><option>Coop. Vivienda</option><option>Conj. Hab.</option></select>
+          </div>
+          <div class="field">
+            <label>Nombre Zona</label>
+            <input value="Las Lomas Sur">
+          </div>
+          <div class="field">
+            <label>Tipo de Vía</label>
+            <select><option>Av.</option><option selected>Jr.</option><option>Calle</option><option>Pje.</option></select>
+          </div>
+          <div class="field">
+            <label>Distrito / Provincia / Depto.</label>
+            <input value="S.J. Lurigancho · Lima · Lima">
+          </div>
+        </div>
+
+        <div class="subsec">Detalles de la vivienda</div>
+        <hr class="subsec-rule">
+
+        <div class="row cols-3">
+          <div class="field">
+            <label>Tenencia</label>
+            <select><option selected>Propio</option><option>Alquilado</option><option>Familiar</option><option>Ambulante</option></select>
+          </div>
+          <div class="field">
+            <label>Tiempo de Residencia</label>
+            <select><option>Menos 1 año</option><option>1–3 años</option><option selected>3–5 años</option><option>Más 5 años</option></select>
+          </div>
+          <div class="field">
+            <label>Construcción</label>
+            <select><option selected>Material noble</option><option>Madera</option><option>Adobe</option></select>
+          </div>
+        </div>
+
+        <div class="row cols-3">
+          <div class="field">
+            <label>Propietario (si alquila)</label>
+            <input placeholder="N/A si vivienda propia">
+          </div>
+          <div class="field">
+            <label>Teléfono Propietario</label>
+            <input placeholder="N/A si vivienda propia">
+          </div>
+          <div class="field">
+            <label>N° Suministro <span class="req">(*)</span></label>
+            <input value="0814578">
+          </div>
+        </div>
+      </div>
+
+      <!-- SEC 3 — Referencias -->
+      <div class="section-wrapper" id="sec3">
+        <h3 class="section-title">3. Referencias de Contacto <span class="req" style="font-size: 13px;">(*)</span></h3>
+        <hr class="section-rule">
+
+        <div class="ref-row">
+          <input value="Hermano" placeholder="Parentesco">
+          <input value="Mosquera Sacarias, Luis" placeholder="Nombre completo">
+          <input value="987654321" placeholder="Teléfono">
+          <button class="btn-del">🗑</button>
+        </div>
+        <button class="btn-add">⊕ Agregar referencia</button>
+      </div>
+
+      <!-- SEC 4 — Situación Económica -->
+      <div class="section-wrapper" id="sec4">
+        <h3 class="section-title">4. Situación Económica</h3>
+        <hr class="section-rule">
+
+        <div class="row cols-3">
+          <div class="field">
+            <label>Tipo de Empleo</label>
+            <select><option>Dependiente</option><option selected>Independiente</option><option>Informal</option></select>
+          </div>
+          <div class="field" style="grid-column: span 2;">
+            <label>Ocupación / Cargo <span class="req">(*)</span></label>
+            <input value="Comerciante">
+          </div>
+        </div>
+
+        <div class="row cols-2">
+          <div class="field">
+            <label style="color: var(--success);">↑ Ingresos Mensuales (S/) <span class="req">(*)</span></label>
+            <input type="number" value="3200" style="border-color: #a3cfbb;">
+          </div>
+          <div class="field">
+            <label style="color: var(--danger);">↓ Gastos Mensuales (S/) <span class="req">(*)</span></label>
+            <input type="number" value="1500" style="border-color: #f1aeb5;">
+          </div>
+        </div>
+      </div>
+
+      <!-- SEC 5 — Negocio / Actividad Laboral -->
+      <div class="section-wrapper" id="sec5">
+        <h3 class="section-title">5. Negocio · Actividad Laboral</h3>
+        <hr class="section-rule">
+
+        <div class="row cols-4">
+          <div class="field">
+            <label>Tipo de Persona</label>
+            <select><option selected>Natural</option><option>Natural c/ RUC</option><option>Jurídica</option></select>
+          </div>
+          <div class="field">
+            <label>Categoría</label>
+            <select><option selected>Comercial</option><option>Productivo</option><option>Servicio</option></select>
+          </div>
+          <div class="field">
+            <label>Antigüedad</label>
+            <input value="6 años">
+          </div>
+          <div class="field">
+            <label>RUC (si aplica)</label>
+            <input placeholder="Ej: 20512345678">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Giro del Negocio</label>
+            <input value="Bodega · venta de abarrotes">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Dirección del Negocio</label>
+            <input value="Mercado Las Lomas Pto. 142">
+          </div>
+        </div>
+      </div>
+
+      <!-- SEC 6 — Adjuntos -->
+      <div class="section-wrapper" id="sec6">
+        <h3 class="section-title">6. Adjuntos del Expediente</h3>
+        <hr class="section-rule">
+
+        <div class="uploads">
+          <div class="upload-card has-file">
+            <div class="ico">📍</div>
+            <div class="lbl">Croquis del Negocio</div>
+            <div class="hint">croquis_negocio.jpg · 142 KB</div>
+          </div>
+          <div class="upload-card has-file">
+            <div class="ico">🏠</div>
+            <div class="lbl">Croquis del Domicilio</div>
+            <div class="hint">croquis_casa.jpg · 98 KB</div>
+          </div>
+          <div class="upload-card">
+            <div class="ico">📷</div>
+            <div class="lbl">Foto Fachada del Negocio</div>
+            <div class="hint">Click para subir JPG / PNG</div>
+          </div>
+          <div class="upload-card">
+            <div class="ico">📷</div>
+            <div class="lbl">Foto Fachada del Domicilio</div>
+            <div class="hint">Click para subir JPG / PNG</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════ Panel resumen sticky ══════ -->
+    <div class="summary-col">
+      <div class="summary">
+
+        <div class="client-card">
+          <div class="avatar">85</div>
+          <div class="name">Cliente 85296345</div>
+          <div class="doc">DNI 85296345 · Casado(a)</div>
+          <div class="tag">EN REGISTRO</div>
+        </div>
+
+        <div class="kpi-block">
+          <small>Excedente Neto Disponible</small>
+          <div class="val">S/ 1,700</div>
+        </div>
+
+        <div class="completion">
+          <h4>Completitud por sección</h4>
+          <div class="comp-row">
+            <div class="lbl">✓ Identidad</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">✓ Ubicación</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">⚠ Referencias</div><div class="pct">50%</div>
+            <div class="bar"><div class="fill partial" style="width:50%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">✓ Económica</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">✓ Negocio</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">⚠ Adjuntos</div><div class="pct">50%</div>
+            <div class="bar"><div class="fill partial" style="width:50%"></div></div>
+          </div>
+        </div>
+
+        <div class="alerts">
+          <h4>⚠ Pendientes (2)</h4>
+          <ul>
+            <li>Agregar al menos 1 referencia más</li>
+            <li>Subir foto fachada negocio y domicilio</li>
+          </ul>
+        </div>
+
+        <div class="att-preview">
+          <h4>Adjuntos cargados (2/4)</h4>
+          <div class="att-item loaded"><span class="ico">📍</span> Croquis negocio · 142 KB</div>
+          <div class="att-item loaded"><span class="ico">🏠</span> Croquis domicilio · 98 KB</div>
+          <div class="att-item"><span class="ico">📷</span> Foto fachada negocio · falta</div>
+          <div class="att-item"><span class="ico">📷</span> Foto fachada domicilio · falta</div>
+        </div>
+
+        <div class="summary-actions">
+          <button class="btn btn-primary">Guardar Cambios</button>
+          <button class="btn btn-outline-primary">💾 Guardar borrador</button>
+          <button class="btn btn-outline-secondary">← Volver al listado</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

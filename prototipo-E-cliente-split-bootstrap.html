@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo E · Cliente split-view (colores del form actual) — Reelige</title>
+<style>
+  /* ═══════════════════════════════════════════════════════════
+     Paleta del formulario de clientes actual (Bootstrap 5)
+     ─ Mantiene azul primario, verde success, rojo danger
+     ─ Estructura del prototipo-C (split-view + panel resumen sticky)
+     ═══════════════════════════════════════════════════════════ */
+  :root {
+    /* Bootstrap base */
+    --bs-primary:        #0d6efd;
+    --bs-primary-dark:   #0a58ca;
+    --bs-primary-soft:   #cfe2ff;
+    --bs-primary-bg:     #e7f1ff;
+
+    --bs-success:        #198754;
+    --bs-success-soft:   #d1e7dd;
+    --bs-success-text:   #0f5132;
+
+    --bs-danger:         #dc3545;
+    --bs-danger-soft:    #f8d7da;
+    --bs-danger-text:    #842029;
+
+    --bs-warning:        #ffc107;
+    --bs-warning-soft:   #fff3cd;
+    --bs-warning-text:   #664d03;
+
+    --bs-body-bg:        #f8f9fa;
+    --bs-card-bg:        #ffffff;
+    --bs-body-color:     #212529;
+    --bs-muted:          #6c757d;
+    --bs-border:         #dee2e6;
+    --bs-border-soft:    #e9ecef;
+
+    --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+    --shadow-md: 0 .5rem 1rem rgba(0,0,0,.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bs-body-bg); color: var(--bs-body-color); padding: 18px;
+    -webkit-font-smoothing: antialiased; }
+  .container { max-width: 1340px; margin: 0 auto; }
+
+  /* ─── Header (gradiente Reelige) ─── */
+  .header { background: linear-gradient(135deg, #4f8ef5 0%, #1a4fc4 100%);
+    color: #fff; border-radius: .5rem; padding: 14px 22px; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow-md); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .icon { width: 34px; height: 34px; background: rgba(255,255,255,.18); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .brand h1 { font-size: 16px; font-weight: 700; line-height: 1.1; }
+  .brand small { display: block; font-weight: 400; font-size: 11px; opacity: .85; }
+  .header .right { font-size: 12px; opacity: .92; text-align: right; }
+  .header .auto-save { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+    background: rgba(255,255,255,.18); border-radius: 12px; font-size: 11px; }
+  .dot { width: 6px; height: 6px; background: #51cf66; border-radius: 50%;
+    animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  /* ─── Chips de navegación ─── */
+  .chips { background: var(--bs-card-bg); border-radius: .5rem; padding: 10px 14px; margin-bottom: 12px;
+    display: flex; gap: 6px; overflow-x: auto; box-shadow: var(--shadow-sm);
+    border: 1px solid var(--bs-border-soft); }
+  .chip { padding: 7px 12px; border-radius: 50rem; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; border: 1px solid var(--bs-border);
+    color: var(--bs-muted); display: inline-flex; align-items: center; gap: 6px;
+    transition: all .15s; background: var(--bs-card-bg); text-decoration: none; }
+  .chip:hover { background: var(--bs-body-bg); }
+  .chip .chk { width: 16px; height: 16px; border-radius: 50%; background: var(--bs-border); color: var(--bs-muted);
+    font-size: 9px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .chip.done { color: var(--bs-success-text); border-color: #a3cfbb; background: var(--bs-success-soft); }
+  .chip.done .chk { background: var(--bs-success); color: #fff; }
+  .chip.incomplete { color: var(--bs-warning-text); border-color: #ffe69c; background: var(--bs-warning-soft); }
+  .chip.incomplete .chk { background: var(--bs-warning); color: var(--bs-warning-text); }
+  .chip.active-section { color: var(--bs-primary); border-color: var(--bs-primary); background: var(--bs-primary-bg); }
+
+  /* ─── Layout split ─── */
+  .split { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+
+  /* ─── Formulario ─── */
+  .form-col { display: flex; flex-direction: column; gap: 12px; }
+  .section { background: var(--bs-card-bg); border-radius: .5rem; padding: 18px 22px;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--bs-border-soft);
+    border-left: 4px solid var(--bs-primary); scroll-margin-top: 12px; }
+  .section.new { border-left-color: var(--bs-success); }
+  .section.warn { border-left-color: var(--bs-warning); }
+
+  .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--bs-border-soft); }
+  .section-head .ico { width: 32px; height: 32px; border-radius: 8px;
+    background: var(--bs-primary-bg); color: var(--bs-primary);
+    display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  .section.new .section-head .ico { background: var(--bs-success-soft); color: var(--bs-success-text); }
+  .section.warn .section-head .ico { background: var(--bs-warning-soft); color: var(--bs-warning-text); }
+  .section-head h2 { font-size: 15px; font-weight: 700; color: var(--bs-primary); flex: 1; }
+  .section-head .pct { font-size: 11px; color: var(--bs-muted); background: var(--bs-body-bg);
+    padding: 3px 9px; border-radius: 10px; border: 1px solid var(--bs-border); }
+  .section-head .pct.full { background: var(--bs-success-soft); color: var(--bs-success-text); border-color: #a3cfbb; }
+  .section-head .pct.partial { background: var(--bs-warning-soft); color: var(--bs-warning-text); border-color: #ffe69c; }
+
+  /* Form grid */
+  .form-row { display: grid; gap: 12px; margin-bottom: 12px; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .cols-3-1 { grid-template-columns: 1fr 1fr 1fr 1.5fr; }
+  .cols-2-1 { grid-template-columns: 2fr 1fr; }
+
+  .field label { display: block; font-size: 12px; color: var(--bs-body-color); font-weight: 500; margin-bottom: 4px; }
+  .field label .req { color: var(--bs-danger); }
+  .field label .info { color: var(--bs-muted); font-size: 10px; font-weight: 400; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: .375rem .75rem; font: inherit; font-size: 13px;
+    color: var(--bs-body-color); line-height: 1.5;
+    border: 1px solid var(--bs-border); border-radius: .375rem; background: var(--bs-card-bg); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 0; border-color: #86b7fe; box-shadow: 0 0 0 .2rem rgba(13,110,253,.25); }
+  .field input.is-invalid { border-color: var(--bs-danger); }
+  .field .err { color: var(--bs-danger); font-size: 11px; margin-top: 3px;
+    display: flex; gap: 4px; align-items: center; }
+  .field .hint { font-size: 10px; color: var(--bs-muted); margin-top: 3px; }
+
+  .subsec { font-size: 11px; font-weight: 600; color: var(--bs-muted); text-transform: uppercase;
+    letter-spacing: .5px; margin: 14px 0 8px 0; padding-bottom: 4px; border-bottom: 1px dashed var(--bs-border); }
+  .subsec:first-of-type { margin-top: 0; }
+
+  /* Pills (estilo Bootstrap btn-outline) */
+  .pill-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .pill-group label { padding: 6px 12px; border: 1px solid var(--bs-primary); border-radius: 50rem;
+    font-size: 12px; cursor: pointer; background: var(--bs-card-bg); user-select: none;
+    color: var(--bs-primary); transition: all .15s; }
+  .pill-group label:hover { background: var(--bs-primary-bg); }
+  .pill-group input { display: none; }
+  .pill-group input:checked + label { background: var(--bs-primary); color: #fff; }
+
+  /* Refs */
+  .ref-row { background: var(--bs-body-bg); padding: 10px; border-radius: .375rem; margin-bottom: 6px;
+    display: grid; grid-template-columns: 1fr 2fr 1fr 36px; gap: 8px; align-items: center;
+    border: 1px solid var(--bs-border-soft); }
+  .ref-row input { padding: 5px 8px; font-size: 12px; }
+  .btn-del { background: transparent; color: var(--bs-danger); border: 1px solid var(--bs-danger);
+    padding: 5px 8px; border-radius: .25rem; cursor: pointer; font-size: 12px; }
+  .btn-del:hover { background: var(--bs-danger); color: #fff; }
+  .btn-add { background: var(--bs-card-bg); color: var(--bs-success); border: 1px solid var(--bs-success);
+    padding: 6px 14px; border-radius: .25rem; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-add:hover { background: var(--bs-success); color: #fff; }
+
+  /* Uploads */
+  .uploads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .upload-card { border: 2px dashed var(--bs-border); border-radius: .5rem; padding: 14px;
+    text-align: center; cursor: pointer; background: var(--bs-body-bg); transition: all .15s; }
+  .upload-card:hover { border-color: var(--bs-primary); background: var(--bs-primary-bg); }
+  .upload-card .ico { font-size: 22px; color: var(--bs-muted); }
+  .upload-card .lbl { font-size: 12px; color: var(--bs-body-color); margin-top: 5px; font-weight: 600; }
+  .upload-card .hint { font-size: 10px; color: var(--bs-muted); margin-top: 2px; }
+  .upload-card.has-file { border: 2px solid var(--bs-success); background: var(--bs-success-soft); }
+  .upload-card.has-file .ico { color: var(--bs-success); }
+  .upload-card.has-file .lbl { color: var(--bs-success-text); }
+
+  /* ════════ Panel resumen sticky ════════ */
+  .summary-col { position: sticky; top: 18px; align-self: start; }
+  .summary { background: var(--bs-card-bg); border-radius: .5rem; padding: 16px;
+    box-shadow: var(--shadow-sm); border: 1px solid var(--bs-border-soft); }
+
+  /* Avatar */
+  .client-card { text-align: center; padding-bottom: 14px; border-bottom: 1px solid var(--bs-border-soft); margin-bottom: 12px; }
+  .avatar { width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, #4f8ef5 0%, #1a4fc4 100%);
+    color: #fff; font-size: 22px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;
+    box-shadow: var(--shadow-sm); }
+  .client-card .name { font-size: 14px; font-weight: 700; color: var(--bs-body-color); }
+  .client-card .doc { font-size: 11px; color: var(--bs-muted); margin-top: 2px; }
+  .client-card .tag { display: inline-block; margin-top: 6px; padding: 3px 9px; font-size: 10px;
+    background: var(--bs-warning-soft); color: var(--bs-warning-text);
+    border: 1px solid #ffe69c; border-radius: 12px; font-weight: 700; letter-spacing: .3px; }
+
+  /* KPI excedente */
+  .kpi-block { padding: 12px; background: var(--bs-success-soft);
+    border: 1px solid #a3cfbb; border-radius: .375rem; margin-bottom: 12px; text-align: center; }
+  .kpi-block small { font-size: 10px; color: var(--bs-success-text); text-transform: uppercase;
+    letter-spacing: .5px; font-weight: 600; }
+  .kpi-block .val { font-size: 20px; font-weight: 800; color: var(--bs-success-text); margin-top: 2px; }
+
+  /* Completitud */
+  .completion h4 { font-size: 11px; font-weight: 700; color: var(--bs-muted); text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 8px; }
+  .comp-row { display: grid; grid-template-columns: 1fr 38px; gap: 6px; align-items: center;
+    margin-bottom: 5px; cursor: pointer; padding: 3px; border-radius: 4px; }
+  .comp-row:hover { background: var(--bs-body-bg); }
+  .comp-row .lbl { font-size: 11.5px; color: var(--bs-body-color); display: flex; align-items: center; gap: 4px; }
+  .comp-row .pct { font-size: 10px; font-weight: 700; color: var(--bs-muted); text-align: right; }
+  .comp-row .bar { grid-column: 1 / 3; height: 4px; background: var(--bs-border); border-radius: 2px;
+    overflow: hidden; margin-top: 2px; }
+  .comp-row .fill { height: 100%; background: var(--bs-success); transition: width .3s; }
+  .comp-row .fill.partial { background: var(--bs-warning); }
+  .comp-row .fill.empty { background: var(--bs-danger); }
+
+  /* Alertas */
+  .alerts { background: var(--bs-warning-soft); border: 1px solid #ffe69c;
+    padding: 10px 12px; border-radius: .375rem; margin-top: 12px; }
+  .alerts h4 { font-size: 11px; color: var(--bs-warning-text); font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: .5px; }
+  .alerts ul { list-style: none; padding-left: 4px; }
+  .alerts li { font-size: 11px; color: var(--bs-warning-text); padding: 3px 0; line-height: 1.4; }
+  .alerts li::before { content: "•"; margin-right: 6px; color: var(--bs-warning); }
+
+  /* Adjuntos preview */
+  .att-preview { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--bs-border-soft); }
+  .att-preview h4 { font-size: 11px; font-weight: 700; color: var(--bs-muted); text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 6px; }
+  .att-item { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--bs-muted);
+    padding: 4px 0; }
+  .att-item.loaded { color: var(--bs-success-text); font-weight: 600; }
+  .att-item .ico { font-size: 13px; }
+
+  /* Acciones */
+  .actions { padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--bs-border-soft);
+    display: flex; flex-direction: column; gap: 6px; }
+  .btn { padding: 9px 14px; border-radius: .375rem; border: 1px solid transparent;
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%;
+    transition: all .15s; }
+  .btn-primary { background: var(--bs-primary); color: #fff; border-color: var(--bs-primary); }
+  .btn-primary:hover { background: var(--bs-primary-dark); border-color: var(--bs-primary-dark); }
+  .btn-outline-primary { background: var(--bs-card-bg); color: var(--bs-primary); border-color: var(--bs-primary); }
+  .btn-outline-primary:hover { background: var(--bs-primary); color: #fff; }
+  .btn-outline-secondary { background: var(--bs-card-bg); color: var(--bs-muted); border-color: var(--bs-border); font-size: 11px; }
+  .btn-outline-secondary:hover { background: var(--bs-body-bg); color: var(--bs-body-color); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="icon">🏛</div>
+      <div>
+        <h1>Reelige</h1>
+        <small>Sistema de Gestión Financiera</small>
+      </div>
+    </div>
+    <div class="right">
+      <span class="auto-save"><span class="dot"></span>Auto-guardado hace 5 s</span>
+      &nbsp;&nbsp;Analista: Pérez García, Juan
+    </div>
+  </div>
+
+  <!-- Chips de navegación -->
+  <div class="chips">
+    <a href="#sec1" class="chip done"><span class="chk">✓</span>Identidad</a>
+    <a href="#sec2" class="chip done"><span class="chk">✓</span>Cónyuge/Hijos</a>
+    <a href="#sec3" class="chip active-section"><span class="chk">3</span>Domicilio</a>
+    <a href="#sec4" class="chip incomplete"><span class="chk">!</span>Referencias (1/2)</a>
+    <a href="#sec5" class="chip done"><span class="chk">✓</span>Económica</a>
+    <a href="#sec6" class="chip done"><span class="chk">✓</span>Negocio</a>
+    <a href="#sec7" class="chip incomplete"><span class="chk">!</span>Adjuntos (2/4)</a>
+  </div>
+
+  <div class="split">
+
+    <!-- ══════ Formulario ══════ -->
+    <div class="form-col">
+
+      <!-- SEC 1 — Identidad -->
+      <div class="section" id="sec1">
+        <div class="section-head">
+          <div class="ico">1</div>
+          <h2>Información de Identidad</h2>
+          <span class="pct full">100 %</span>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Tipo doc <span class="req">*</span></label>
+            <select><option>DNI</option><option>RUC</option><option>Pasaporte</option><option>C.E.</option></select>
+          </div>
+          <div class="field"><label>Número doc <span class="req">*</span></label><input value="45782931"></div>
+          <div class="field"><label>F. nacimiento</label><input type="date" value="1985-04-12"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Ap. paterno <span class="req">*</span></label><input value="MOSQUERA"></div>
+          <div class="field"><label>Ap. materno <span class="req">*</span></label><input value="SACARIAS"></div>
+          <div class="field"><label>Nombres <span class="req">*</span></label><input value="Mirella"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Sexo</label>
+            <div class="pill-group">
+              <input type="radio" id="sx1" name="sx"><label for="sx1">M</label>
+              <input type="radio" id="sx2" name="sx" checked><label for="sx2">F</label>
+            </div>
+          </div>
+          <div class="field"><label>Estado civil <span class="req">*</span></label>
+            <select><option>Soltero(a)</option><option selected>Casado(a)</option><option>Conviviente</option><option>Viudo(a)</option></select>
+          </div>
+          <div class="field"><label>Email</label><input value="mirella.mosquera@gmail.com"></div>
+        </div>
+      </div>
+
+      <!-- SEC 2 — Cónyuge / Hijos -->
+      <div class="section new" id="sec2">
+        <div class="section-head">
+          <div class="ico">2</div>
+          <h2>Cónyuge y Dependientes</h2>
+          <span class="pct full">100 %</span>
+        </div>
+        <div class="form-row cols-2-1">
+          <div class="field"><label>Cónyuge</label><input value="Rodríguez Salas, Pedro"></div>
+          <div class="field"><label>DNI cónyuge</label><input value="42118567"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>N° hijos</label><input type="number" value="3"></div>
+          <div class="field"><label>Hijos estudiando</label><input type="number" value="2"></div>
+          <div class="field"><label>Total dependientes</label><input value="5"></div>
+        </div>
+        <div class="field">
+          <label>Nivel educativo (hijos)</label>
+          <div class="pill-group">
+            <input type="checkbox" id="ed1"><label for="ed1">Primaria</label>
+            <input type="checkbox" id="ed2" checked><label for="ed2">Secundaria</label>
+            <input type="checkbox" id="ed3"><label for="ed3">Técnica</label>
+            <input type="checkbox" id="ed4" checked><label for="ed4">Superior</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEC 3 — Domicilio -->
+      <div class="section" id="sec3">
+        <div class="section-head">
+          <div class="ico">3</div>
+          <h2>Ubicación y Vivienda</h2>
+          <span class="pct full">100 %</span>
+        </div>
+
+        <div class="subsec">Dirección</div>
+        <div class="form-row cols-3-1">
+          <div class="field"><label>Tipo zona</label>
+            <select><option>URB</option><option selected>AAHH</option><option>PPJJ</option><option>Coop.</option><option>Conj.Hab.</option></select>
+          </div>
+          <div class="field"><label>Nombre zona</label><input value="Las Lomas Sur"></div>
+          <div class="field"><label>Tipo vía</label>
+            <select><option>Av.</option><option selected>Jr.</option><option>Calle</option><option>Pje.</option></select>
+          </div>
+          <div class="field"><label>Dirección + N° <span class="req">*</span></label><input value="Las Begonias 245"></div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Departamento</label><input value="Lima"></div>
+          <div class="field"><label>Provincia</label><input value="Lima"></div>
+          <div class="field"><label>Distrito</label><input value="S.J. Lurigancho"></div>
+        </div>
+
+        <div class="subsec">Detalles de la vivienda</div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Tenencia</label>
+            <div class="pill-group">
+              <input type="radio" id="t1" name="ten" checked><label for="t1">Propio</label>
+              <input type="radio" id="t2" name="ten"><label for="t2">Alquilado</label>
+              <input type="radio" id="t3" name="ten"><label for="t3">Familiar</label>
+              <input type="radio" id="t4" name="ten"><label for="t4">Ambulante</label>
+            </div>
+          </div>
+          <div class="field"><label>Tiempo de residencia</label>
+            <select><option>Menos 1 año</option><option>1–3 años</option><option selected>3–5 años</option><option>Más 5 años</option></select>
+          </div>
+          <div class="field"><label>Construcción</label>
+            <select><option selected>Noble</option><option>Madera</option><option>Adobe</option></select>
+          </div>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Propietario <span class="info">si alquila</span></label><input placeholder="—"></div>
+          <div class="field"><label>Tel. propietario</label><input placeholder="—"></div>
+          <div class="field"><label>N° suministro <span class="req">*</span></label><input value="0814578"></div>
+        </div>
+      </div>
+
+      <!-- SEC 4 — Referencias -->
+      <div class="section warn" id="sec4">
+        <div class="section-head">
+          <div class="ico">4</div>
+          <h2>Referencias de Contacto</h2>
+          <span class="pct partial">50 %</span>
+        </div>
+        <div class="ref-row">
+          <input value="Hermano">
+          <input value="Mosquera Sacarias, Luis">
+          <input value="987654321">
+          <button class="btn-del">🗑</button>
+        </div>
+        <button class="btn-add">+ Agregar referencia (recomendado mínimo 2)</button>
+      </div>
+
+      <!-- SEC 5 — Económica -->
+      <div class="section" id="sec5">
+        <div class="section-head">
+          <div class="ico">5</div>
+          <h2>Situación Económica</h2>
+          <span class="pct full">100 %</span>
+        </div>
+        <div class="form-row cols-3">
+          <div class="field"><label>Tipo empleo</label>
+            <select><option>Dependiente</option><option selected>Independiente</option><option>Informal</option></select>
+          </div>
+          <div class="field"><label>Ocupación <span class="req">*</span></label><input value="Comerciante"></div>
+          <div class="field"><label>Empresa</label><input placeholder="—"></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="field"><label style="color: var(--bs-success);">↑ Ingresos (S/) <span class="req">*</span></label>
+            <input type="number" value="3200" style="border-color: #a3cfbb;"></div>
+          <div class="field"><label style="color: var(--bs-danger);">↓ Gastos (S/) <span class="req">*</span></label>
+            <input type="number" value="1500" style="border-color: #f1aeb5;"></div>
+        </div>
+      </div>
+
+      <!-- SEC 6 — Negocio -->
+      <div class="section new" id="sec6">
+        <div class="section-head">
+          <div class="ico">6</div>
+          <h2>Negocio · Actividad Laboral</h2>
+          <span class="pct full">100 %</span>
+        </div>
+        <div class="form-row cols-4">
+          <div class="field"><label>Tipo persona</label>
+            <select><option selected>Natural</option><option>Natural c/ RUC</option><option>Jurídica</option></select>
+          </div>
+          <div class="field"><label>Categoría</label>
+            <select><option selected>Comercial</option><option>Productivo</option><option>Servicio</option></select>
+          </div>
+          <div class="field"><label>Antigüedad</label><input value="6 años"></div>
+          <div class="field"><label>RUC</label><input placeholder="—"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Giro</label><input value="Bodega · venta de abarrotes"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Dirección negocio</label><input value="Mercado Las Lomas Pto. 142"></div>
+        </div>
+      </div>
+
+      <!-- SEC 7 — Adjuntos -->
+      <div class="section warn" id="sec7">
+        <div class="section-head">
+          <div class="ico">7</div>
+          <h2>Adjuntos del Expediente</h2>
+          <span class="pct partial">50 %</span>
+        </div>
+        <div class="uploads">
+          <div class="upload-card has-file"><div class="ico">📍</div><div class="lbl">Croquis negocio ✓</div><div class="hint">142 KB</div></div>
+          <div class="upload-card has-file"><div class="ico">🏠</div><div class="lbl">Croquis domicilio ✓</div><div class="hint">98 KB</div></div>
+          <div class="upload-card"><div class="ico">📷</div><div class="lbl">Foto fachada negocio</div><div class="hint">Click para subir</div></div>
+          <div class="upload-card"><div class="ico">📷</div><div class="lbl">Foto fachada domicilio</div><div class="hint">Click para subir</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════ Panel resumen sticky ══════ -->
+    <div class="summary-col">
+      <div class="summary">
+
+        <div class="client-card">
+          <div class="avatar">MM</div>
+          <div class="name">Mirella Mosquera S.</div>
+          <div class="doc">DNI 45782931 · Casada</div>
+          <div class="tag">EN REGISTRO</div>
+        </div>
+
+        <div class="kpi-block">
+          <small>Excedente neto disponible</small>
+          <div class="val">S/ 1,700</div>
+        </div>
+
+        <div class="completion">
+          <h4>Completitud por sección</h4>
+          <div class="comp-row">
+            <div class="lbl">✓ Identidad</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">✓ Cónyuge / Hijos</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">✓ Domicilio</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">⚠ Referencias</div><div class="pct">50%</div>
+            <div class="bar"><div class="fill partial" style="width:50%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">✓ Económica</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">✓ Negocio</div><div class="pct">100%</div>
+            <div class="bar"><div class="fill" style="width:100%"></div></div>
+          </div>
+          <div class="comp-row">
+            <div class="lbl">⚠ Adjuntos</div><div class="pct">50%</div>
+            <div class="bar"><div class="fill partial" style="width:50%"></div></div>
+          </div>
+        </div>
+
+        <div class="alerts">
+          <h4>⚠ Pendientes (2)</h4>
+          <ul>
+            <li>Agregar al menos 1 referencia más</li>
+            <li>Subir foto fachada negocio y domicilio</li>
+          </ul>
+        </div>
+
+        <div class="att-preview">
+          <h4>Adjuntos cargados (2/4)</h4>
+          <div class="att-item loaded"><span class="ico">📍</span> Croquis negocio · 142 KB</div>
+          <div class="att-item loaded"><span class="ico">🏠</span> Croquis domicilio · 98 KB</div>
+          <div class="att-item"><span class="ico">📷</span> Foto fachada negocio · falta</div>
+          <div class="att-item"><span class="ico">📷</span> Foto fachada domicilio · falta</div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary">Registrar Cliente</button>
+          <button class="btn btn-outline-primary">💾 Guardar borrador</button>
+          <button class="btn btn-outline-secondary">← Volver al listado</button>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
