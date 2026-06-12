@@ -125,15 +125,16 @@ saldoTeóricoTotal    = saldoTeóricoEfectivo + saldoTeóricoBanco
 | Regla | Prueba | Estado |
 |---|---|---|
 | RN-CAJA-01/04 (apertura básica) | `PagosIntegrationTest.desembolsar()` abre caja | 🟡 indirecto |
-| RN-CAJA-05 (conservación D1) | _pendiente_ — **Fase 1 DINERO** | ❌ |
-| RN-CAJA-10/13 (cuadre dif y estado) | _pendiente (clave)_ | ❌ |
-| RN-CAJA-11 (billetaje exacto bloquea) | _pendiente (clave)_ | ❌ |
-| RN-CAJA-03 (una caja por día) | _pendiente_ | ❌ |
+| RN-CAJA-03 (una caja por día) | `CajaCierreTest.segundaCajaMismoDia_esRechazada` | ✅ |
+| RN-CAJA-05 (saldo teórico, D1) | `CajaCierreTest.cierreCuadrado_quedaCerrada` + `DineroConservacionTest` | ✅ |
+| RN-CAJA-10/13 (cuadre dif y estado) | `CajaCierreTest.cierreCuadrado…` / `…quedaDescuadre` | ✅ |
+| RN-CAJA-11 (billetaje exacto bloquea) | `CajaCierreTest.cierreDescuadrado_conBilletajeExacto_esBloqueado` | ✅ |
+| RN-CAJA-12 (descuadre exige observación) | `CajaCierreTest.…sinObservacion_exigeObservacion` | ✅ |
 | RN-CAJA-16 (regularización >24h) | _pendiente_ | ❌ |
 | RN-CAJA-18 (descuento por faltante) | _pendiente_ | ❌ |
 
-> 🔴 Esta es la zona con mayor brecha de pruebas y mayor riesgo (dinero). Es el objetivo
-> principal de la **Fase 1 — DINERO** del [plan de pruebas](../desarrollo/plan-de-pruebas.md).
+> 🟢 Cierre/cuadre **ya cubierto** por `CajaCierreTest` (5 escenarios). Quedan pendientes
+> regularización >24h (RN-CAJA-16) y descuento por faltante (RN-CAJA-18).
 
 ---
 

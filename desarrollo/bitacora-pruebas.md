@@ -32,8 +32,13 @@
 | `DineroConservacionTest` | `extornoDesembolso_neutralizaCaja` | extornar desembolso → préstamo revierte **y** EGRESO se neutraliza (**HALL-08 corregido**) | **Dinero D5** | ✅ |
 | `TasaAprobadaCronogramaTest` | `productoSimple_ignoraLaTasaAprobada_usaLaDelProducto` | SIMPLE: cronograma usa tasa del producto, no la aprobada (**confirma HALL-11**) | **Dinero D3** | ✅ |
 | `MovimientoAtomicoTest` | `desembolso_siFallaElMovimientoDeCaja_revierteTodo` | si falla el movimiento → desembolso revierte (**HALL-07 corregido**) | **Dinero D1/D2** | ✅ |
+| `CajaCierreTest` | `segundaCajaMismoDia_esRechazada` | un cajero, una caja por día (RN-CAJA-03) | Caja | ✅ |
+| `CajaCierreTest` | `cierreCuadrado_quedaCerrada` | contado = teórico → CERRADA, dif 0 (RN-CAJA-05/13) | **Dinero D4** | ✅ |
+| `CajaCierreTest` | `cierreDescuadrado_conBilletajeExacto_esBloqueado` | descuadre + billetaje exacto → bloqueado (RN-CAJA-11) | **Dinero D4** | ✅ |
+| `CajaCierreTest` | `cierreDescuadrado_paramOff_sinObservacion_exigeObservacion` | descuadre sin observación → rechazado (RN-CAJA-12) | **Dinero D4** | ✅ |
+| `CajaCierreTest` | `cierreDescuadrado_paramOff_conObservacion_quedaDescuadre` | descuadre con observación → DESCUADRE (RN-CAJA-13) | **Dinero D4** | ✅ |
 
-**Total: 18 pruebas en verde.**
+**Total: 23 pruebas en verde.**
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -46,7 +51,7 @@
 | **D1** | Conservación del saldo | 🟡 parcial | `DineroConservacionTest` (desembolso EFECTIVO ✅ / DESCONTADO destapa HALL-06) |
 | **D2** | Trazabilidad (todo movimiento registrado) | ⏳ pendiente | — |
 | **D3** | Exactitud de montos | 🟡 parcial | `pagoCuotaVencida_cobraMora` |
-| **D4** | Cuadre cuadrado/descuadrado | ⏳ pendiente | — |
+| **D4** | Cuadre cuadrado/descuadrado | ✅ | `CajaCierreTest` (cuadrado, descuadrado, billetaje exacto, observación) |
 | **D5** | Extorno reversible | 🟡 parcial | `DineroConservacionTest` (extorno desembolso destapa HALL-08) |
 | **D6** | No hay dinero sin caja | ✅ | `desembolsar_sinCajaAbierta…` |
 | **D7** | Sin doble cobro | ⏳ pendiente | — |
