@@ -63,13 +63,13 @@ Cada archivo `reglas-negocio/<modulo>.md` sigue esta plantilla:
 
 | # | Dominio | Doc | Diagrama | Reglas extraídas del código | Prueba enlazada | Prioridad |
 |---|---|---|---|---|---|---|
-| 1 | Flujo del préstamo | ✅ `flujo-prestamo.md` | ✅ | ✅ + hallazgo mora | 🟡 parcial | ✅ doc lista |
-| 2 | Caja (apertura/cierre/cuadre) | ✅ `caja.md` | ✅ | ✅ | 🟡 inicial | ✅ doc lista |
-| 3 | Movimientos (ingresos/egresos) | ✅ `movimientos-caja.md` | ✅ | ✅ + 2 hallazgos | ❌ | ✅ doc lista |
-| 4 | Pago de cuotas / cobranza | ❌ | ❌ | ❌ | 🟡 inicial | 🔴 P1 |
-| 5 | Mora y feriados | ❌ | ❌ | ⚠️ deriva (hábiles vs calendario) | ❌ | 🔴 P1 |
-| 6 | Extornos | ✅ `extornos.md` | ✅ | ✅ + HALL-08 | ❌ | ✅ doc lista |
-| 7 | Cálculo de cuotas (FLAT/SALDO/FRANCES) | ✅ `calculo-cuotas.md` | ✅ | ✅ + HALL-09 | 🟡 indirecto | ✅ doc lista |
+| 1 | Flujo del préstamo | ✅ `flujo-prestamo.md` | ✅ | ✅ + hallazgo mora | ✅ (flujo, negativos, pago) | ✅ doc lista |
+| 2 | Caja (apertura/cierre/cuadre) | ✅ `caja.md` | ✅ | ✅ | ✅ `CajaCierreTest` (5) | ✅ doc lista |
+| 3 | Movimientos (ingresos/egresos) | ✅ `movimientos-caja.md` | ✅ | ✅ HALL-06/07 **corregidos** | ✅ `DineroConservacionTest` + `MovimientoAtomicoTest` | ✅ doc lista |
+| 4 | Pago de cuotas / cobranza | ❌ doc | ❌ | ⚠️ HALL-12 **corregido** | ✅ `PagoLiquidacionTest` + `PagosIntegrationTest` | 🟧 falta doc |
+| 5 | Mora y feriados | ❌ | ❌ | ⚠️ deriva (hábiles vs calendario, HALL-01) | 🟡 1 caso (mora %) | 🔴 P1 |
+| 6 | Extornos | ✅ `extornos.md` | ✅ | ✅ HALL-08 **corregido** | 🟡 desembolso ✅, pago ❌ | ✅ doc lista |
+| 7 | Cálculo de cuotas (FLAT/SALDO/FRANCES) | ✅ `calculo-cuotas.md` | ✅ | ✅ HALL-09 **resuelto** | ✅ `CronogramaCalculoTest` (5) | ✅ doc lista |
 | 8 | Evaluación de crédito | ✅ `evaluacion.md` | ✅ | ✅ + HALL-10 | 🟡 parcial | ✅ doc lista |
 | 9 | Aprobación / comité | ✅ `aprobacion-comite.md` | ✅ | ✅ + HALL-11 | 🟡 parcial | ✅ doc lista |
 | 10 | Desembolso | ✅ `desembolso.md` | ✅ | ✅ | 🟡 parcial | ✅ doc lista |

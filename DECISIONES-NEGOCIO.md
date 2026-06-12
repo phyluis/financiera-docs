@@ -80,8 +80,12 @@ fija por producto o ajustable por comité.
 | 1 | Mora | ¿Días hábiles o calendario? (y ¿por producto?) | Medio (unificar `MoraCalculator`) |
 | 2 | Tasa en SIMPLE | ¿La fija el comité o el producto? | Bajo (1 línea o ajuste de UI) |
 
-> Los **bugs de dinero claros ya fueron corregidos** (HALL-06, HALL-07, HALL-08) y la calculadora
-> legacy eliminada (HALL-09). Estas **dos decisiones** son lo único que queda del repaso, y
-> dependen de negocio, no de código.
+> Los **bugs de dinero claros ya fueron corregidos** (HALL-06 cargo descontado, HALL-07
+> atomicidad, HALL-08 extorno↔caja, HALL-12 pagado→LIQUIDADO) y la calculadora legacy eliminada
+> (HALL-09). Estas **dos decisiones** son lo único que queda del repaso que depende de negocio.
+>
+> ℹ️ Nota operativa (HALL-12): los préstamos pagados **antes** del fix quedaron como `CANCELADO`
+> en la BD — hay un script de migración pendiente (`CANCELADO` con todas las cuotas `PAGADO` →
+> `LIQUIDADO`) que conviene correr en dev/qa antes de producción.
 
 *Documento de decisión — 2026-06-12.*

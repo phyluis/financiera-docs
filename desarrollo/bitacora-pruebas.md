@@ -28,7 +28,7 @@
 | `PagosIntegrationTest` | `pagoParcial_dejaCuotaEnParcial` | pago < cuota → estado `PARCIAL` | Pagos D | ✅ |
 | `PagosIntegrationTest` | `pagoCuotaVencida_cobraMora` | cuota vencida → `importeMora` > 0 + `PAGADO` | **Dinero D3** | ✅ |
 | `DineroConservacionTest` | `desembolsoEfectivo_conservaCaja` | cargo EFECTIVO → saldo teórico = físico | **Dinero D1** | ✅ |
-| `DineroConservacionTest` | `desembolsoDescontado_inflaSaldoTeoricoEnElCargo` | cargo DESCONTADO → teórico inflado en `cargo` (**confirma HALL-06**) | **Dinero D1** | ✅ |
+| `DineroConservacionTest` | `desembolsoDescontado_conservaCaja` | cargo DESCONTADO → también conserva (**HALL-06 corregido**) | **Dinero D1** | ✅ |
 | `DineroConservacionTest` | `extornoDesembolso_neutralizaCaja` | extornar desembolso → préstamo revierte **y** EGRESO se neutraliza (**HALL-08 corregido**) | **Dinero D5** | ✅ |
 | `TasaAprobadaCronogramaTest` | `productoSimple_ignoraLaTasaAprobada_usaLaDelProducto` | SIMPLE: cronograma usa tasa del producto, no la aprobada (**confirma HALL-11**) | **Dinero D3** | ✅ |
 | `MovimientoAtomicoTest` | `desembolso_siFallaElMovimientoDeCaja_revierteTodo` | si falla el movimiento → desembolso revierte (**HALL-07 corregido**) | **Dinero D1/D2** | ✅ |
@@ -46,9 +46,20 @@
 | `PagoLiquidacionTest` | `pagoExactoDeCuota_quedaPagada` | pago exacto → PAGADO | RN-PAGO | ✅ |
 | `PagoLiquidacionTest` | `pagoConExcedente_seAplicaASiguienteCuota` | excedente → abona la cuota siguiente | RN-PAGO | ✅ |
 
-**Total: 31 pruebas en verde.**
+**Total backend: 31 pruebas en verde.**
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
+
+### E2E (Playwright — frontend, `npm run e2e`)
+
+| Proyecto | Test | Qué verifica | Backend |
+|---|---|---|---|
+| smoke | redirige a /login y muestra el formulario | app servida + login renderiza | ❌ no requiere |
+| smoke | formulario vacío muestra errores requeridos | validación del form | ❌ no requiere |
+| setup | authenticate | login real por UI + guarda JWT (`storageState`) | ✅ requiere |
+| authenticated | entra autenticado y abre el dashboard | sesión válida, no rebota a login | ✅ requiere |
+
+**Total E2E: 4 pruebas en verde** (verificadas contra dev: `ng serve` :4200 + backend :8081 + `dbFinanciera`).
 
 ---
 
@@ -56,15 +67,16 @@
 
 | Invariante | Descripción | Estado | Prueba |
 |---|---|---|---|
-| **D1** | Conservación del saldo | 🟡 parcial | `DineroConservacionTest` (desembolso EFECTIVO ✅ / DESCONTADO destapa HALL-06) |
-| **D2** | Trazabilidad (todo movimiento registrado) | ⏳ pendiente | — |
+| **D1** | Conservación del saldo | ✅ | `DineroConservacionTest` (desembolso EFECTIVO y DESCONTADO conservan, tras fix HALL-06) |
+| **D2** | Trazabilidad (todo movimiento registrado) | 🟡 parcial | `DineroConservacionTest` (EGRESO/INGRESO con montos exactos) + `MovimientoAtomicoTest` (atómico, tras fix HALL-07) |
 | **D3** | Exactitud de montos | ✅ | `CronogramaCalculoTest` (Σamort=capital, redondeo 0.10) + `pagoCuotaVencida_cobraMora` |
 | **D4** | Cuadre cuadrado/descuadrado | ✅ | `CajaCierreTest` (cuadrado, descuadrado, billetaje exacto, observación) |
-| **D5** | Extorno reversible | 🟡 parcial | `DineroConservacionTest` (extorno desembolso destapa HALL-08) |
+| **D5** | Extorno reversible | 🟡 parcial | `DineroConservacionTest.extornoDesembolso_neutralizaCaja` (tras fix HALL-08); falta extorno de **pago** |
 | **D6** | No hay dinero sin caja | ✅ | `desembolsar_sinCajaAbierta…` |
-| **D7** | Sin doble cobro | ⏳ pendiente | — |
+| **D7** | Sin doble cobro | ⏳ pendiente | — (RN-EXT-03 sin prueba directa) |
 
-> 🔴 **Brecha crítica:** lo más delicado (cuadre, extornos, conservación, trazabilidad) **aún sin cubrir**.
+> 🟢 **5 de 7 invariantes cubiertas o casi.** Pendientes: extorno de pago (D5), no-doble-extorno (D7),
+> y el INGRESO del pago verificado contra el movimiento (D2 completo).
 
 ---
 
@@ -75,11 +87,15 @@
 | Flujo feliz completo | 1 caso | ✅ |
 | RBAC (desembolso) | 5 casos | ✅ |
 | Validaciones/rechazos | 2 casos | 🟡 inicial |
-| Pagos (parcial, mora) | 2 casos | 🟡 inicial |
-| **Caja: cuadre / extornos / movimientos** | 0 | 🔴 pendiente |
-| **Scope por agencia/rol** | 0 | 🔴 pendiente |
-| Cálculo por producto (FLAT/SALDO/FRANCES) | 0 | 🔴 pendiente |
+| Pagos (parcial, mora, liquidación, excedente) | 5 casos | ✅ |
+| Caja: cuadre y cierre | 5 casos (`CajaCierreTest`) | ✅ |
+| Caja: conservación / movimientos / atomicidad | 4 casos (`DineroConservacionTest`, `MovimientoAtomicoTest`) | ✅ |
+| Extornos | 1 caso (desembolso neutraliza) | 🟡 falta pago y no-doble-extorno |
+| Cálculo por producto (FLAT/SALDO/FRANCES + gracia) | 5 casos (`CronogramaCalculoTest`) | ✅ |
+| Tasa aprobada vs producto | 1 caso (fija HALL-11, pendiente decisión) | 🟡 |
+| **Scope por agencia/rol** | 0 — requiere Testcontainers (SQL nativo PG) | 🔴 pendiente |
 | Reportes / documentos | jrxml compila | 🟡 mínimo |
+| E2E (Playwright) | 4 casos (smoke + login + dashboard) | ✅ inicial |
 
 ---
 
@@ -87,40 +103,32 @@
 
 > Orden por **criticidad** (dinero y seguridad primero). Cada fase: tests + regla documentada + verde en `./mvnw test`.
 
-### Fase 0 — Infraestructura + POC *(HECHA)*
-H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → **13 tests verdes.**
+### ✅ Fase 0 — Infraestructura + POC *(HECHA, 2026-06-11)*
+H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests verdes.
 
-### 🔴 Fase 1 — DINERO (máxima prioridad)
-**Objetivo:** cerrar las invariantes D1–D7.
-- Apertura de caja → saldo inicial.
-- Desembolso EFECTIVO → EGRESO exacto; saldo baja (D1, D3).
-- Cargo DESCONTADO / EFECTIVO → INGRESO `CARGO_DESEMBOLSO` (D3).
-- Pago al día → INGRESO `COBRO_CUOTA`; vencido → `+ COBRO_MORA` (D2, D3).
-- **Cuadre cuadrado** (diferencia 0) y **descuadrado** (detecta/bloquea) (D4).
-- **Extorno de pago** y **de desembolso** → revierten exacto (D5).
-- **Conservación**: tras N operaciones, `teórico = inicial + Σing − Σegr` (D1).
-- **Sin doble cobro**: re-cobrar cuota pagada / re-extornar (D7).
-- *Doc:* asegurar `flujo-prestamo.md` (mora días hábiles vs calendario) y conceptos de caja.
+### ✅ Fase 1 — DINERO *(HECHA en lo esencial, 2026-06-12)*
+- ✅ Conservación en desembolso EFECTIVO/DESCONTADO (D1) — y **corrigió HALL-06**.
+- ✅ Atomicidad del movimiento de caja (D2) — **corrigió HALL-07**.
+- ✅ Cuadre cuadrado/descuadrado/billetaje exacto/observación (D4).
+- ✅ Extorno de desembolso neutraliza la caja (D5) — **corrigió HALL-08**.
+- ✅ Pago: parcial, mora, exacto, excedente, liquidación — **corrigió HALL-12**.
+- ⏳ Restan: extorno de **pago** (D5), no-doble-extorno (D7), regularización >24h, descuento por faltante.
 
-### 🔴 Fase 2 — Seguridad / Scope (P1)
-**Objetivo:** que nadie vea datos que no le tocan.
-- `computarScope` por rol (gerente agencia ≠ otra agencia; analista solo sus clientes; cajero solo suyos; admin/ger.gen/auditor global).
-- Cartera de clientes filtrada por scope.
-- RBAC ampliado (evaluación, pagos, caja).
-- *Doc:* actualizar `roles-permisos.md` con la tabla real de `computarScope`.
+### ✅ Fase 3 — Cálculo / Productos *(HECHA en lo esencial, 2026-06-12)*
+- ✅ FLAT/SALDO/FRANCES conservan capital; redondeo 0.10; gracia PARCIAL/TOTAL.
+- ⏳ Restan: mora FIJO/FIJO_DIARIO_HABILES, mora desde fecha fin, fechas en día hábil.
+- ⚠️ Tasa aprobada vs producto: **HALL-11 confirmado**, pendiente decisión de negocio.
 
-### 🟧 Fase 3 — Cálculo / Productos (P2)
-- Cuotas exactas: SIMPLE_FLAT, SIMPLE_SALDO, FRANCES (montos al centavo).
-- Redondeo a 0.10; período de gracia (PARCIAL/TOTAL).
-- Mora: PORCENTAJE / FIJO / FIJO_DIARIO_HABILES + **mora desde fecha fin** (diario).
+### 🔴 Fase 2 — Seguridad / Scope *(BLOQUEADA por infra)*
+- `computarScope` vive en SQL nativo PostgreSQL → **no corre en H2**. Requiere **Testcontainers
+  + PostgreSQL** (Docker). Al montarlo, entra también la Fase 4 (reportes con SQL nativo).
 
-### 🟨 Fase 4 — Reportes / Documentos (P3)
-- Cartera de clientes, cuadre de caja, cartera mora (montos + scope).
-- Generación Word/PDF (contrato, pagaré, acta, cronograma) sin error.
-- *Nota:* reportes con SQL nativo → evaluar Testcontainers + PostgreSQL si H2 no basta.
+### 🟨 Fase 4 — Reportes / Documentos
+- Cartera, cuadre, cartera mora (con Testcontainers); generación Word/PDF.
 
-### 🟦 Fase 5 — E2E de UI (opcional)
-- Playwright: login + flujo en navegador (smoke de extremo a extremo).
+### ✅ Fase 5 — E2E de UI *(INICIADA, 2026-06-12)*
+- ✅ Playwright montado: smoke (sin backend) + login real + dashboard autenticado (4 tests).
+- ⏳ Siguiente: flujos por rol contra **BD de pruebas desechable** (los E2E que mutan dinero).
 
 ---
 
@@ -138,7 +146,12 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → **13 tests
 |---|---|
 | 2026-06-11 | Fase 0: infraestructura H2 + flujo completo + RBAC + negativos + pagos. 13 tests verdes. |
 | 2026-06-11 | Creado `plan-de-pruebas.md` (estrategia + invariantes D1–D7) y esta bitácora. |
-| _(pendiente)_ | Fase 1 — DINERO (cuadre, extornos, conservación). |
+| 2026-06-12 | Documentadas las reglas de negocio del núcleo (15 dominios) → 12 hallazgos registrados. |
+| 2026-06-12 | Fase 1 DINERO: conservación, cuadre, atomicidad, extornos. **Corregidos HALL-06/07/08** + limpieza HALL-09. |
+| 2026-06-12 | Fase 3 Cálculo: FLAT/SALDO/FRANCES + gracia conservan capital (D3). |
+| 2026-06-12 | Lote Pago: liquidación/excedente → destapó y **corrigió HALL-12** (pagado → LIQUIDADO). |
+| 2026-06-12 | Fase 5 E2E: Playwright montado y verificado contra dev (4 tests: smoke + login + dashboard). |
+| 2026-06-12 | **31 tests backend + 4 E2E en verde.** Pendientes: Scope (Testcontainers), decisiones HALL-01/11. |
 
 ---
 
