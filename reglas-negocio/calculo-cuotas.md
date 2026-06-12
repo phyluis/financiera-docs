@@ -83,15 +83,14 @@ flowchart TD
 
 ## 7. ⚠️ Hallazgo detectado
 
-### HALL-09 — Calculadora de cuotas duplicada / legacy con enum inconsistente
-- **Severidad:** 🟧 Media · **Estado:** 🔍 En análisis
-- Existe `service/CalculoCuotasServiceImpl` que usa **otro** enum (`utils.TipoCalculo` =
-  `AMORTIZADO/FRANCES/LINEAL`), distinto al del producto (`SIMPLE_FLAT/SIMPLE_SALDO/FRANCES`),
-  **sin gracia ni redondeo a 0.10** y con una fórmula FRANCES distinta.
-- **Impacto:** si algún flujo lo invoca, generaría cronogramas **distintos** al motor real
-  (`ProductoCalculator`). Riesgo de confusión/mantenimiento; potencial bug si está en uso.
-- **Acción propuesta:** confirmar call sites; si está huérfano, **eliminarlo**; si se usa,
-  unificar con `ProductoCalculator`.
+### HALL-09 — Calculadora de cuotas legacy huérfana  ✅ RESUELTO (eliminada)
+- **Severidad:** 🟧 Media · **Estado:** ✅ Resuelto (2026-06-12)
+- Existía `service/CalculoCuotasServiceImpl` con **otro** enum (`utils.TipoCalculo` =
+  `AMORTIZADO/FRANCES/LINEAL`), sin gracia ni redondeo a 0.10. Se verificó que estaba **huérfano**
+  y se **eliminó** el cluster (`CalculoCuotasService(+Impl)`, `CuotaDTO`, `PrestamoRequestDTO`,
+  `utils/TipoCalculo`). Compila y los 18 tests siguen verdes.
+- **Pendiente menor (opcional):** `PrestamoCalculator` y `ProductoCalculator` aún duplican la
+  lógica FLAT/SALDO/FRANCES → candidatos a unificar en un solo motor.
 
 ---
 

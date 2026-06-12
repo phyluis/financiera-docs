@@ -79,18 +79,17 @@
 - **Supuesto:** el reverso asume que el efectivo vuelve físicamente (cliente devuelve el desembolso
   / cajero devuelve el cobro), que es el caso normal de un extorno.
 
-### HALL-09 · Calculadora de cuotas duplicada / legacy con enum inconsistente
-- **Tipo:** 🐞 BUG / ✨ Mejora · **Severidad:** 🟧 Media · **Estado:** 🔍 En análisis
+### HALL-09 · Calculadora de cuotas legacy huérfana  ✅ RESUELTO (eliminada)
+- **Tipo:** ✨ Mejora (limpieza) · **Severidad:** 🟧 Media · **Estado:** ✅ **Resuelto (2026-06-12)**
 - **Regla:** `RN-CRON` / HALL-09 · **Origen:** documentación de Cálculo de Cuotas (#6)
-- **Evidencia:** existen **tres** motores de cálculo de cuotas:
-  `utils/PrestamoCalculator` (cronograma persistido al aprobar, +ALEMAN),
-  `utils/ProductoCalculator` (simulación) — ambos **duplican** la lógica FLAT/SALDO/FRANCES — y
-  `service/CalculoCuotasServiceImpl` (legacy, enum `AMORTIZADO/LINEAL` incompatible, sin gracia
-  ni redondeo a 0.10).
-- **Impacto:** duplicación → riesgo de divergencia/mantenimiento; el legacy genera cronogramas
-  distintos si algún flujo lo invoca.
-- **Acción propuesta:** verificar call sites del legacy; si está huérfano, eliminarlo. Evaluar
-  unificar `PrestamoCalculator` y `ProductoCalculator` en un solo motor.
+- **Evidencia:** existían **tres** motores: `utils/PrestamoCalculator` (cronograma persistido),
+  `utils/ProductoCalculator` (simulación) y `service/CalculoCuotasServiceImpl` (legacy, enum
+  `AMORTIZADO/LINEAL` incompatible, sin gracia ni redondeo a 0.10).
+- **Fix:** se verificó que el legacy estaba **huérfano** (sin inyecciones) y se **eliminó** el
+  cluster completo: `CalculoCuotasService`, `CalculoCuotasServiceImpl`, `CuotaDTO`,
+  `PrestamoRequestDTO`, `utils/TipoCalculo`. Compila y los 18 tests siguen verdes.
+- **Pendiente menor:** unificar `PrestamoCalculator` y `ProductoCalculator` (siguen duplicando la
+  lógica FLAT/SALDO/FRANCES) — refactor opcional, no urgente.
 
 ### HALL-10 · Cuota estimada de la evaluación puede diferir del cronograma real
 - **Tipo:** 🐞 BUG (a confirmar) · **Severidad:** 🟧 Media · **Estado:** 🔍 En análisis
@@ -160,8 +159,9 @@
 | Estado | Cantidad |
 |---|---|
 | ✅ Corregido (con fix + prueba) | 3 (HALL-06 doble conteo cargo descontado, HALL-08 extorno no neutraliza caja, HALL-07 movimiento no atómico) |
-| 🔴 Confirmado con prueba (falta fix) | 1 (HALL-11 tasa aprobada ignorada en SIMPLE) |
-| 🔍 En análisis | 2 (HALL-09 calc duplicada, HALL-10 cuota estimada≠real) |
+| ✅ Resuelto (limpieza) | 1 (HALL-09 calculadora legacy eliminada) |
+| 🔴 Confirmado con prueba (falta fix/decisión) | 1 (HALL-11 tasa aprobada ignorada en SIMPLE) |
+| 🔍 En análisis (menor) | 1 (HALL-10 cuota estimada≠real) |
 | ⏳ Decisión pendiente (dinero) | 1 (HALL-01 mora) |
 | ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |
 | 👀 Para vigilar | 0 |
