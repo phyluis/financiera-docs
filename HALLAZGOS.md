@@ -33,8 +33,12 @@
 - **Acción propuesta:** definir con negocio la regla correcta (hábiles o calendario), unificar
   `MoraCalculator`, y blindar con una prueba que compare ambos cálculos sobre la misma cuota.
 
-### HALL-06 · Doble conteo del cargo en desembolso DESCONTADO  ✅ CONFIRMADO
-- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Confirmado con prueba**
+### HALL-06 · Doble conteo del cargo en desembolso DESCONTADO  ✅ CORREGIDO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
+- **Fix aplicado:** `PrestamoServiceImpl.confirmarDesembolso` — el EGRESO `DESEMBOLSO_PRESTAMO`
+  ahora es **siempre el bruto** (antes en DESCONTADO era neto). El cargo se sigue registrando
+  como INGRESO aparte. Efecto neto en caja = `−neto` en ambos modos → conserva. El test
+  `desembolsoDescontado_conservaCaja` (verde) valida la conservación.
 - **Regla:** `RN-MOV-05` · **Origen:** documentación de Movimientos de Caja (#4)
 - **Evidencia:** `service/PrestamoServiceImpl.java:441-495`. En modo `DESCONTADO`, el EGRESO
   `DESEMBOLSO_PRESTAMO` se reduce a `neto = bruto − cargo` **y además** se registra un INGRESO
@@ -154,7 +158,8 @@
 
 | Estado | Cantidad |
 |---|---|
-| 🔴 Confirmado con prueba (falta fix) | 3 (HALL-06 doble conteo cargo descontado, HALL-08 extorno no neutraliza caja, HALL-11 tasa aprobada ignorada en SIMPLE) |
+| ✅ Corregido (con fix + prueba) | 1 (HALL-06 doble conteo cargo descontado) |
+| 🔴 Confirmado con prueba (falta fix) | 2 (HALL-08 extorno no neutraliza caja, HALL-11 tasa aprobada ignorada en SIMPLE) |
 | 🔍 En análisis | 3 (HALL-07 sin tx, HALL-09 calc duplicada, HALL-10 cuota estimada≠real) |
 | ⏳ Decisión pendiente (dinero) | 1 (HALL-01 mora) |
 | ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |

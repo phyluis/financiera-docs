@@ -62,7 +62,7 @@ flowchart TD
 | **RN-MOV-02** | **Pago de cuota** → **un** INGRESO por el **total pagado** (capital+interés+mora); concepto `COBRO_CUOTA`, o `COBRO_MORA` si el pago es **solo** mora | `PagoCajeroServiceImpl:423-445` |
 | **RN-MOV-03** | **Desembolso** → EGRESO `DESEMBOLSO_PRESTAMO`; canal `BANCO` si transferencia, si no `EFECTIVO` | `PrestamoServiceImpl:455` |
 | **RN-MOV-04** | **Cargo de desembolso** (si > 0) → INGRESO `CARGO_DESEMBOLSO` por el cargo | `PrestamoServiceImpl:487` |
-| **RN-MOV-05** | El **monto del EGRESO** depende del modo de cobro del cargo: <br>• `EFECTIVO` (aparte) → EGRESO = **bruto** <br>• `DESCONTADO` → EGRESO = **bruto − cargo** (neto) | `PrestamoServiceImpl:441-443` |
+| **RN-MOV-05** | El EGRESO del desembolso es **siempre el bruto** (EFECTIVO y DESCONTADO); el cargo va aparte como INGRESO. *(Corregido 2026-06-12 por HALL-06; antes DESCONTADO usaba neto.)* | `PrestamoServiceImpl.confirmarDesembolso` |
 | **RN-MOV-06** | Canal `BANCO` no afecta el efectivo; se cuadra en su propia columna (ver RN-CAJA-07) | `cuadre()` |
 | **RN-MOV-07** | `billetaje` (desglose) solo en INGRESO + EFECTIVO + `INCREMENTO_CAPITAL` | `MovimientoCaja` |
 | **RN-MOV-08** | Anulación **lógica** (`anulado`, `anuladoPor`, `anuladoAt`); el extorno marca `extornado`+`extornoId` | `MovimientoCaja`, `CajaServiceImpl.eliminar` |
@@ -73,12 +73,11 @@ flowchart TD
 
 > Documentados como riesgo; ver detalle en [`../HALLAZGOS.md`](../HALLAZGOS.md).
 
-### HALL-06 — Posible doble conteo del cargo en desembolso DESCONTADO
-En modo `DESCONTADO`, el EGRESO se reduce a `neto` **y además** se registra el INGRESO
-`CARGO_DESEMBOLSO`. Efecto en caja = `−neto + cargo`, pero físicamente solo salió `neto` →
-el saldo teórico podría quedar **inflado en `cargo`** (faltante artificial al cerrar).
-En modo `EFECTIVO` (EGRESO=bruto + INGRESO=cargo) **sí** conserva. → **Confirmar con un test de
-conservación (D1).**
+### HALL-06 — Doble conteo del cargo en desembolso DESCONTADO  ✅ CORREGIDO
+Antes, en modo `DESCONTADO` el EGRESO se reducía a `neto` **y además** se registraba el INGRESO
+`CARGO_DESEMBOLSO` → saldo teórico inflado en `cargo` (faltante al cerrar). **Corregido
+(2026-06-12):** el EGRESO ahora es **siempre bruto** en ambos modos → conserva. Validado por
+`DineroConservacionTest.desembolsoDescontado_conservaCaja`.
 
 ### HALL-07 — El registro del movimiento no revierte la operación si falla
 Tanto en pago como en desembolso, `registrarAutomatico(...)` está dentro de un `try/catch` que
