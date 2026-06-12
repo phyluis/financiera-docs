@@ -213,18 +213,52 @@ sudo systemctl start backend-app
 sudo systemctl status backend-app --no-pager
 ```
 
-### 7.2 `scripts/deploy-frontend.sh`
+### 7.2 `scripts/deploy-frontend.sh` (BLINDADO)
+
+> ⚠️ **Versión segura.** El script anterior borraba `/var/www/html` **antes** de verificar que
+> el origen tuviera archivos. Si se corría con `/home/ubuntu/app/frontend` vacío (p. ej. tras un
+> `rm -rf` sin volver a subir el build), **dejaba el sitio sin archivos → 403**. Esta versión
+> **aborta** si el origen está vacío o no trae `index.csr.html`, y respalda el sitio antes de reemplazar.
+
 ```bash
 nano /home/ubuntu/app/scripts/deploy-frontend.sh && chmod +x /home/ubuntu/app/scripts/deploy-frontend.sh
 ```
 ```bash
 #!/bin/bash
+# Despliegue del frontend Angular a Nginx — BLINDADO contra origen vacío.
+set -euo pipefail
+
+SRC="/home/ubuntu/app/frontend"
+DEST="/var/www/html"
+
 echo "=== Desplegando frontend ==="
-sudo rm -rf /var/www/html/*
-sudo cp -r /home/ubuntu/app/frontend/* /var/www/html/
-sudo chown -R www-data:www-data /var/www/html/
-sudo chmod -R 755 /var/www/html/
-sudo systemctl reload nginx
+
+# 1. Guardas: el origen debe existir, NO estar vacío y traer el entrypoint Angular.
+if [ ! -d "$SRC" ] || [ -z "$(ls -A "$SRC" 2>/dev/null)" ]; then
+  echo "ABORTADO: '$SRC' está vacío o no existe. El sitio NO se toca."
+  exit 1
+fi
+if [ ! -f "$SRC/index.csr.html" ]; then
+  echo "ABORTADO: falta index.csr.html en '$SRC'. ¿Subiste el build? El sitio NO se toca."
+  exit 1
+fi
+
+# 2. Backup del sitio actual antes de reemplazar (red de seguridad).
+if [ -n "$(ls -A "$DEST" 2>/dev/null)" ]; then
+  TS="$(date +%Y%m%d_%H%M%S)"
+  sudo mkdir -p /home/ubuntu/app/backups/frontend
+  sudo tar -czf "/home/ubuntu/app/backups/frontend/html_${TS}.tar.gz" -C "$DEST" . \
+    && echo "Backup previo: /home/ubuntu/app/backups/frontend/html_${TS}.tar.gz"
+fi
+
+# 3. Reemplazo del contenido y publicación.
+sudo rm -rf "${DEST:?}"/*
+sudo cp -r "$SRC"/* "$DEST"/
+sudo chown -R www-data:www-data "$DEST"/
+sudo chmod -R 755 "$DEST"/
+sudo nginx -t && sudo systemctl reload nginx
+
+echo "=== Frontend desplegado OK ($(ls -1 "$DEST" | wc -l) elementos publicados) ==="
 ```
 
 ### 7.3 `scripts/backup-db.sh` + cron mensual
