@@ -53,16 +53,17 @@
   INGRESO=cargo (igual que EFECTIVO); opción B: EGRESO=neto **sin** INGRESO del cargo. Tras el
   fix, ajustar el test (el teórico debe igualar al físico).
 
-### HALL-07 · El registro del movimiento de caja no revierte la operación si falla
-- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** 🔍 En análisis
+### HALL-07 · El registro del movimiento de caja no revertía la operación si fallaba  ✅ CORREGIDO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
 - **Regla:** `RN-MOV-08` · **Origen:** documentación de Movimientos de Caja (#4)
-- **Evidencia:** `PagoCajeroServiceImpl:446-449` y `PrestamoServiceImpl:496-499`:
-  `registrarAutomatico(...)` va dentro de un `try/catch` que solo **loguea un warning**.
-- **Impacto:** si el registro del movimiento falla, el **pago/desembolso ya quedó persistido**
-  pero **sin movimiento de caja** → dinero recibido/entregado que **no aparece en el cuadre**
-  (rompe D1/D2). Faltante o sobrante silencioso.
-- **Acción propuesta:** evaluar que el movimiento de caja sea parte de la **misma transacción**
-  (que su fallo revierta el pago/desembolso), o un mecanismo de reconciliación.
+- **Evidencia original:** en `PagoCajeroServiceImpl` y `PrestamoServiceImpl`, `registrarAutomatico`
+  iba en un `try/catch` que solo **logueaba un warning** → si fallaba, el pago/desembolso quedaba
+  persistido **sin movimiento de caja** (dinero fuera del cuadre).
+- **Fix aplicado:** ambos `catch` ahora **re-lanzan** (`IllegalStateException`); como los métodos
+  son `@Transactional`, el fallo del movimiento **revierte toda la operación** (atómico).
+- **Prueba (verde):** `MovimientoAtomicoTest.desembolso_siFallaElMovimientoDeCaja_revierteTodo`:
+  forzando el fallo del movimiento (spy de `CajaService`), el desembolso propaga el error y el
+  préstamo queda en `PRE_DESEMBOLSO` (no VIGENTE).
 
 ### HALL-08 · Extornar pago/desembolso no neutraliza el movimiento de caja  ✅ CORREGIDO
 - **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
@@ -158,9 +159,9 @@
 
 | Estado | Cantidad |
 |---|---|
-| ✅ Corregido (con fix + prueba) | 2 (HALL-06 doble conteo cargo descontado, HALL-08 extorno no neutraliza caja) |
+| ✅ Corregido (con fix + prueba) | 3 (HALL-06 doble conteo cargo descontado, HALL-08 extorno no neutraliza caja, HALL-07 movimiento no atómico) |
 | 🔴 Confirmado con prueba (falta fix) | 1 (HALL-11 tasa aprobada ignorada en SIMPLE) |
-| 🔍 En análisis | 3 (HALL-07 sin tx, HALL-09 calc duplicada, HALL-10 cuota estimada≠real) |
+| 🔍 En análisis | 2 (HALL-09 calc duplicada, HALL-10 cuota estimada≠real) |
 | ⏳ Decisión pendiente (dinero) | 1 (HALL-01 mora) |
 | ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |
 | 👀 Para vigilar | 0 |

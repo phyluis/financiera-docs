@@ -31,8 +31,9 @@
 | `DineroConservacionTest` | `desembolsoDescontado_inflaSaldoTeoricoEnElCargo` | cargo DESCONTADO → teórico inflado en `cargo` (**confirma HALL-06**) | **Dinero D1** | ✅ |
 | `DineroConservacionTest` | `extornoDesembolso_neutralizaCaja` | extornar desembolso → préstamo revierte **y** EGRESO se neutraliza (**HALL-08 corregido**) | **Dinero D5** | ✅ |
 | `TasaAprobadaCronogramaTest` | `productoSimple_ignoraLaTasaAprobada_usaLaDelProducto` | SIMPLE: cronograma usa tasa del producto, no la aprobada (**confirma HALL-11**) | **Dinero D3** | ✅ |
+| `MovimientoAtomicoTest` | `desembolso_siFallaElMovimientoDeCaja_revierteTodo` | si falla el movimiento → desembolso revierte (**HALL-07 corregido**) | **Dinero D1/D2** | ✅ |
 
-**Total: 17 pruebas en verde.**
+**Total: 18 pruebas en verde.**
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 

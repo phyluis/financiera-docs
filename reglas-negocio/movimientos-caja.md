@@ -79,11 +79,12 @@ Antes, en modo `DESCONTADO` el EGRESO se reducía a `neto` **y además** se regi
 (2026-06-12):** el EGRESO ahora es **siempre bruto** en ambos modos → conserva. Validado por
 `DineroConservacionTest.desembolsoDescontado_conservaCaja`.
 
-### HALL-07 — El registro del movimiento no revierte la operación si falla
-Tanto en pago como en desembolso, `registrarAutomatico(...)` está dentro de un `try/catch` que
-solo **loguea un warning**. Si falla, el **pago/desembolso ya quedó persistido** pero **sin
-movimiento de caja** → dinero recibido/entregado que **no aparece en el cuadre** (rompe D1/D2).
-→ **Evaluar transaccionalidad** (que el fallo del movimiento revierta la operación).
+### HALL-07 — El registro del movimiento no revertía la operación si fallaba  ✅ CORREGIDO
+Antes, en pago y desembolso `registrarAutomatico(...)` estaba en un `try/catch` que solo
+**logueaba un warning** → si fallaba, la operación quedaba persistida **sin movimiento de caja**.
+**Corregido (2026-06-12):** ambos `catch` re-lanzan; como los métodos son `@Transactional`, el
+fallo del movimiento **revierte toda la operación**. Validado por
+`MovimientoAtomicoTest.desembolso_siFallaElMovimientoDeCaja_revierteTodo`.
 
 ---
 
