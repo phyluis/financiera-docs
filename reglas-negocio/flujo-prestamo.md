@@ -78,7 +78,7 @@ flowchart TD
 |---|---|---|
 | **RN-FLU-12** | Evaluación y aprobación quedan en **solo lectura** | regla de proceso |
 | **RN-FLU-13** | Solo cobranza interactúa con el préstamo (pagos de cuotas) | `PagoCajeroService` |
-| **RN-FLU-14** | Cuando **todas** las cuotas quedan pagadas → `LIQUIDADO` | `PagoCajeroServiceImpl` |
+| **RN-FLU-14** | Cuando **todas** las cuotas quedan pagadas → debería ser `LIQUIDADO` ⚠️ pero el código deja `CANCELADO` (ver **HALL-12**) | `PagoCajeroServiceImpl:335` |
 
 ---
 
