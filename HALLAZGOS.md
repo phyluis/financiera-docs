@@ -118,24 +118,22 @@
 
 ---
 
-### HALL-12 · Préstamo totalmente pagado queda `CANCELADO` en vez de `LIQUIDADO`
-- **Tipo:** 🐞 BUG (consistencia de estados) · **Severidad:** 🟧 Media-Alta · **Estado:** 🔴 Confirmado con prueba
+### HALL-12 · Préstamo totalmente pagado quedaba `CANCELADO` en vez de `LIQUIDADO`  ✅ CORREGIDO
+- **Tipo:** 🐞 BUG (consistencia de estados) · **Severidad:** 🟧 Media-Alta · **Estado:** ✅ **Corregido (2026-06-12)**
 - **Regla:** `RN-FLU-14` · **Origen:** lote de pruebas de Pago (#RN-PAGO)
-- **Evidencia:** `PagoCajeroServiceImpl:335-337` — al pagar la última cuota
-  (`cuotasRestantes == 0`) hace `setEstadoPrestamo("CANCELADO")`. También la auto-sanación
-  (`:61-68`) marca `CANCELADO` un VIGENTE sin cuotas pendientes.
-- **Prueba (verde):** `PagoLiquidacionTest.pagarTodasLasCuotas_cierraElPrestamo` fija el
-  comportamiento actual (CANCELADO) y documenta la discrepancia.
-- **Impacto:**
-  1. **Estado sobrecargado:** `CANCELADO` significa a la vez "pagado por completo" y
-     "cancelación administrativa (3 devoluciones)" → no se distingue un préstamo bien pagado de
-     uno anulado, en reportes/consultas/cartera.
-  2. El **modelo** (`Prestamo.java`) y los **docs** (RN-FLU-14) dicen que debe ser `LIQUIDADO`.
-  3. El **handler de extorno** de pago chequea `"LIQUIDADO"` para volver a `VIGENTE` → con un
-     préstamo pagado (hoy `CANCELADO`) ese reverso **no se dispara**.
-- **Acción propuesta (decisión + fix):** que el pago total deje el préstamo en `LIQUIDADO`
-  (reservar `CANCELADO` para la cancelación administrativa). Revisar consumidores del estado en
-  reportes antes de aplicar. La prueba está lista para flipear a `LIQUIDADO` tras el fix.
+- **Evidencia original:** `PagoCajeroServiceImpl` marcaba `CANCELADO` al pagar la última cuota
+  (`:335-337`) y en la auto-sanación (`:61-68`), mientras `CobranzaServiceImpl:402` (el otro flujo
+  de pago) ya marcaba `LIQUIDADO` → **mismo evento, dos estados según el canal de pago**.
+- **Impacto que tenía:** (1) `CANCELADO` sobrecargado (pagado vs anulado administrativo);
+  (2) `countLiquidados` (histórico positivo del cliente) no contaba a quien pagó por caja;
+  (3) reportes con conteo `liquidados` errado; (4) el extorno de pago no podía revertir
+  LIQUIDADO→VIGENTE porque el estado nunca era LIQUIDADO.
+- **Fix aplicado:** caja alineada con cobranza — pago total (y cancelación anticipada) →
+  `LIQUIDADO`; auto-sanación → `LIQUIDADO`; ajustado el chequeo de NORMALIZADO. `CANCELADO`
+  queda reservado para la cancelación administrativa (3 devoluciones).
+- **Prueba (verde):** `PagoLiquidacionTest.pagarTodasLasCuotas_liquidaElPrestamo`.
+- **Pendiente menor:** datos históricos — préstamos pagados antes del fix quedaron `CANCELADO`
+  en BD; evaluar script de migración (`CANCELADO` con todas las cuotas PAGADO → `LIQUIDADO`).
 
 ---
 
@@ -180,9 +178,9 @@
 
 | Estado | Cantidad |
 |---|---|
-| ✅ Corregido (con fix + prueba) | 3 (HALL-06 doble conteo cargo descontado, HALL-08 extorno no neutraliza caja, HALL-07 movimiento no atómico) |
+| ✅ Corregido (con fix + prueba) | 4 (HALL-06 doble conteo cargo, HALL-07 movimiento no atómico, HALL-08 extorno no neutraliza caja, HALL-12 pagado→LIQUIDADO) |
 | ✅ Resuelto (limpieza) | 1 (HALL-09 calculadora legacy eliminada) |
-| 🔴 Confirmado con prueba (falta fix/decisión) | 2 (HALL-11 tasa aprobada ignorada en SIMPLE, HALL-12 pagado→CANCELADO en vez de LIQUIDADO) |
+| 🔴 Confirmado con prueba (falta fix/decisión) | 1 (HALL-11 tasa aprobada ignorada en SIMPLE) |
 | 🔍 En análisis (menor) | 1 (HALL-10 cuota estimada≠real) |
 | ⏳ Decisión pendiente (dinero) | 1 (HALL-01 mora) |
 | ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |

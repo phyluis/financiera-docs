@@ -42,7 +42,7 @@
 | `CronogramaCalculoTest` | `frances_conservaCapital` | FRANCES: Σamort=capital (RN-CRON-03) | **Dinero D3** | ✅ |
 | `CronogramaCalculoTest` | `graciaParcial_soloInteres_noAmortiza` | gracia PARCIAL: solo interés (RN-CRON-11) | **Dinero D3** | ✅ |
 | `CronogramaCalculoTest` | `graciaTotal_sinPago` | gracia TOTAL: cuota = 0 (RN-CRON-12) | **Dinero D3** | ✅ |
-| `PagoLiquidacionTest` | `pagarTodasLasCuotas_cierraElPrestamo` | pagar todo → cierra (hoy CANCELADO, **destapa HALL-12**) | RN-PAGO | ✅ |
+| `PagoLiquidacionTest` | `pagarTodasLasCuotas_liquidaElPrestamo` | pagar todo → `LIQUIDADO` (**HALL-12 corregido**) | RN-PAGO | ✅ |
 | `PagoLiquidacionTest` | `pagoExactoDeCuota_quedaPagada` | pago exacto → PAGADO | RN-PAGO | ✅ |
 | `PagoLiquidacionTest` | `pagoConExcedente_seAplicaASiguienteCuota` | excedente → abona la cuota siguiente | RN-PAGO | ✅ |
 
