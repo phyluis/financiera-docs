@@ -5,7 +5,8 @@
 > la documentación cada vez que aparece algo.
 >
 > Relacionado: [`reglas-negocio/README.md`](./reglas-negocio/README.md) ·
-> [`desarrollo/bitacora-pruebas.md`](./desarrollo/bitacora-pruebas.md)
+> [`desarrollo/bitacora-pruebas.md`](./desarrollo/bitacora-pruebas.md) ·
+> [`DECISIONES-NEGOCIO.md`](./DECISIONES-NEGOCIO.md) (HALL-01 y HALL-11, pendientes de negocio)
 
 ## Cómo se clasifica
 
