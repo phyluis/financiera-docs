@@ -33,17 +33,21 @@
 - **Acción propuesta:** definir con negocio la regla correcta (hábiles o calendario), unificar
   `MoraCalculator`, y blindar con una prueba que compare ambos cálculos sobre la misma cuota.
 
-### HALL-06 · Posible doble conteo del cargo en desembolso DESCONTADO
-- **Tipo:** 🐞 BUG (a confirmar) · **Severidad:** 🔴 Alta (dinero) · **Estado:** 🔍 En análisis
+### HALL-06 · Doble conteo del cargo en desembolso DESCONTADO  ✅ CONFIRMADO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Confirmado con prueba**
 - **Regla:** `RN-MOV-05` · **Origen:** documentación de Movimientos de Caja (#4)
 - **Evidencia:** `service/PrestamoServiceImpl.java:441-495`. En modo `DESCONTADO`, el EGRESO
   `DESEMBOLSO_PRESTAMO` se reduce a `neto = bruto − cargo` **y además** se registra un INGRESO
   `CARGO_DESEMBOLSO = cargo`. Efecto en caja = `−neto + cargo`; físicamente solo salió `neto`.
-- **Impacto:** el saldo teórico quedaría **inflado en `cargo`** → faltante artificial al cerrar
-  caja en cada desembolso con cargo descontado. En modo `EFECTIVO` sí conserva.
-- **Acción propuesta:** confirmar con un **test de conservación (D1)** comparando saldo teórico
-  vs efectivo realmente entregado; si se reproduce, decidir el modelo correcto (EGRESO=bruto +
-  INGRESO=cargo, **o** EGRESO=neto sin INGRESO).
+- **Prueba (verde):** `DineroConservacionTest` (backend):
+  `desembolsoDescontado_inflaSaldoTeoricoEnElCargo` demuestra que el saldo teórico queda por
+  encima del físico **exactamente en `cargo`**; `desembolsoEfectivo_conservaCaja` confirma que el
+  modo EFECTIVO **sí conserva**.
+- **Impacto confirmado:** cada desembolso con cargo descontado genera un **faltante = cargo** al
+  cuadrar. Con `CIERRE_CAJA_BILLETAJE_EXACTO=true` (default, RN-CAJA-11) **bloquearía el cierre**.
+- **Acción propuesta:** corregir el modelo del EGRESO en DESCONTADO — opción A: EGRESO=bruto +
+  INGRESO=cargo (igual que EFECTIVO); opción B: EGRESO=neto **sin** INGRESO del cargo. Tras el
+  fix, ajustar el test (el teórico debe igualar al físico).
 
 ### HALL-07 · El registro del movimiento de caja no revierte la operación si falla
 - **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** 🔍 En análisis
@@ -56,16 +60,19 @@
 - **Acción propuesta:** evaluar que el movimiento de caja sea parte de la **misma transacción**
   (que su fallo revierta el pago/desembolso), o un mecanismo de reconciliación.
 
-### HALL-08 · Extornar pago/desembolso no neutraliza el movimiento de caja asociado
-- **Tipo:** 🐞 BUG (a confirmar) · **Severidad:** 🔴 Alta (dinero) · **Estado:** 🔍 En análisis
+### HALL-08 · Extornar pago/desembolso no neutraliza el movimiento de caja  ✅ CONFIRMADO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Confirmado con prueba**
 - **Regla:** `RN-EXT` / HALL-08 · **Origen:** documentación de Extornos (#5)
 - **Evidencia:** `PagoCuotaExtornoHandler` y `DesembolsoExtornoHandler` revierten el lado
   préstamo pero **no marcan** el `movimiento_caja` automático (`COBRO_CUOTA`/`DESEMBOLSO_PRESTAMO`)
   como `anulado`/`extornado`. En cambio `MovimientoCajaExtornoHandler` **sí** lo hace.
-- **Impacto:** tras extornar un pago/desembolso, el INGRESO/EGRESO sigue contando en el cuadre →
-  posible descuadre salvo reverso manual de caja por separado.
-- **Acción propuesta:** confirmar el flujo operativo esperado y blindar con un test de
-  conservación (D5) que compare el saldo de caja antes/después del extorno.
+- **Prueba (verde):** `DineroConservacionTest.extornoDesembolso_noNeutralizaCaja`: tras aprobar el
+  extorno, el préstamo vuelve a `APROBADO` pero `sumEgresosPorApertura` **sigue == bruto** (el
+  EGRESO no se neutralizó).
+- **Impacto confirmado:** tras extornar un pago/desembolso, el INGRESO/EGRESO sigue contando en el
+  cuadre → descuadre salvo reverso manual de caja por separado.
+- **Acción propuesta:** que los handlers de PAGO_CUOTA y DESEMBOLSO marquen también el movimiento
+  de caja asociado (`anulado`/`extornado`), o confirmar el flujo operativo de reverso de efectivo.
 
 ### HALL-09 · Calculadora de cuotas duplicada / legacy con enum inconsistente
 - **Tipo:** 🐞 BUG / ✨ Mejora · **Severidad:** 🟧 Media · **Estado:** 🔍 En análisis
@@ -88,17 +95,21 @@
 - **Impacto:** el análisis de capacidad/ratio usa una cuota que puede no coincidir con la real.
 - **Acción propuesta:** confirmar si es tolerable (solo "estimado") o unificar las fórmulas.
 
-### HALL-11 · La tasa aprobada por el comité no se aplica en productos SIMPLE
-- **Tipo:** 🐞 BUG (a confirmar) · **Severidad:** 🔴 Alta (dinero) · **Estado:** 🔍 En análisis
+### HALL-11 · La tasa aprobada por el comité no se aplica en productos SIMPLE  ✅ CONFIRMADO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Confirmado con prueba**
 - **Regla:** `RN-APRO` / HALL-11 · **Origen:** documentación de Aprobación/Comité (#8)
 - **Evidencia:** `AprobacionCreditoServiceImpl.crearPrestamoDesdeAprobacion`: `tasaInteresAnual =
   tasaFinalAprobada` pero `tasaInteresPeriodo = producto.getTasaInteres()`. En `PrestamoCalculator`,
   FRANCES/ALEMAN leen `tasaInteresAnual` (usa aprobada); SIMPLE_FLAT/SIMPLE_SALDO leen
   `tasaInteresPeriodo` (usa la del producto, **ignora la aprobada**).
-- **Impacto:** si el comité aprueba una tasa distinta a la del producto, en créditos SIMPLE el
-  cliente paga con la tasa del producto, no la aprobada. Microcrédito suele ser SIMPLE.
-- **Acción propuesta:** confirmar intención; si la tasa del comité debe mandar, asignar
-  `tasaInteresPeriodo = tasaFinalAprobada` en SIMPLE. Blindar con prueba.
+- **Prueba (verde):** `TasaAprobadaCronogramaTest.productoSimple_ignoraLaTasaAprobada_usaLaDelProducto`:
+  producto SIMPLE_SALDO 5%, comité aprueba 10%, crédito de 1 cuota de 1000 → el cronograma cobra
+  interés **50.00** (5%), no 100.00 (10% aprobado).
+- **Impacto confirmado:** si el comité aprueba una tasa distinta a la del producto, en créditos
+  SIMPLE el cliente paga con la del producto, no la aprobada. Microcrédito suele ser SIMPLE.
+- **Acción propuesta:** definir si la tasa la fija el producto o el comité (decisión de negocio).
+  Si manda el comité, asignar `tasaInteresPeriodo = tasaFinalAprobada` en SIMPLE; tras el fix,
+  actualizar el test para esperar 100.00.
 
 ---
 
@@ -143,9 +154,10 @@
 
 | Estado | Cantidad |
 |---|---|
-| 🔍 En análisis | 6 (HALL-06 doble conteo, HALL-07 sin tx, HALL-08 extorno no neutraliza caja, HALL-09 calc duplicada, HALL-10 cuota estimada≠real, HALL-11 tasa aprobada ignorada en SIMPLE) |
+| 🔴 Confirmado con prueba (falta fix) | 3 (HALL-06 doble conteo cargo descontado, HALL-08 extorno no neutraliza caja, HALL-11 tasa aprobada ignorada en SIMPLE) |
+| 🔍 En análisis | 3 (HALL-07 sin tx, HALL-09 calc duplicada, HALL-10 cuota estimada≠real) |
 | ⏳ Decisión pendiente (dinero) | 1 (HALL-01 mora) |
-| ✅ Resuelto / confirmado | 6 (HALL-02..05, V-01, V-03, V-04) |
+| ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |
 | 👀 Para vigilar | 0 |
 
 > 🔴 **Prioridad de revisión:** HALL-06 y HALL-07 tocan el cuadre directamente. Se confirman/

@@ -27,8 +27,12 @@
 | `FlujoNegativoTest` | `desembolsar_sinCajaAbierta_lanzaExcepcion` | desembolsar sin caja → excepción | **Dinero D6** | ✅ |
 | `PagosIntegrationTest` | `pagoParcial_dejaCuotaEnParcial` | pago < cuota → estado `PARCIAL` | Pagos D | ✅ |
 | `PagosIntegrationTest` | `pagoCuotaVencida_cobraMora` | cuota vencida → `importeMora` > 0 + `PAGADO` | **Dinero D3** | ✅ |
+| `DineroConservacionTest` | `desembolsoEfectivo_conservaCaja` | cargo EFECTIVO → saldo teórico = físico | **Dinero D1** | ✅ |
+| `DineroConservacionTest` | `desembolsoDescontado_inflaSaldoTeoricoEnElCargo` | cargo DESCONTADO → teórico inflado en `cargo` (**confirma HALL-06**) | **Dinero D1** | ✅ |
+| `DineroConservacionTest` | `extornoDesembolso_noNeutralizaCaja` | extornar desembolso → préstamo revierte pero EGRESO sigue en caja (**confirma HALL-08**) | **Dinero D5** | ✅ |
+| `TasaAprobadaCronogramaTest` | `productoSimple_ignoraLaTasaAprobada_usaLaDelProducto` | SIMPLE: cronograma usa tasa del producto, no la aprobada (**confirma HALL-11**) | **Dinero D3** | ✅ |
 
-**Total: 13 pruebas en verde.**
+**Total: 17 pruebas en verde.**
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -38,11 +42,11 @@
 
 | Invariante | Descripción | Estado | Prueba |
 |---|---|---|---|
-| **D1** | Conservación del saldo | ⏳ pendiente | — |
+| **D1** | Conservación del saldo | 🟡 parcial | `DineroConservacionTest` (desembolso EFECTIVO ✅ / DESCONTADO destapa HALL-06) |
 | **D2** | Trazabilidad (todo movimiento registrado) | ⏳ pendiente | — |
 | **D3** | Exactitud de montos | 🟡 parcial | `pagoCuotaVencida_cobraMora` |
 | **D4** | Cuadre cuadrado/descuadrado | ⏳ pendiente | — |
-| **D5** | Extorno reversible | ⏳ pendiente | — |
+| **D5** | Extorno reversible | 🟡 parcial | `DineroConservacionTest` (extorno desembolso destapa HALL-08) |
 | **D6** | No hay dinero sin caja | ✅ | `desembolsar_sinCajaAbierta…` |
 | **D7** | Sin doble cobro | ⏳ pendiente | — |
 
