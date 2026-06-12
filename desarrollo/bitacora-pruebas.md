@@ -37,8 +37,13 @@
 | `CajaCierreTest` | `cierreDescuadrado_conBilletajeExacto_esBloqueado` | descuadre + billetaje exacto → bloqueado (RN-CAJA-11) | **Dinero D4** | ✅ |
 | `CajaCierreTest` | `cierreDescuadrado_paramOff_sinObservacion_exigeObservacion` | descuadre sin observación → rechazado (RN-CAJA-12) | **Dinero D4** | ✅ |
 | `CajaCierreTest` | `cierreDescuadrado_paramOff_conObservacion_quedaDescuadre` | descuadre con observación → DESCUADRE (RN-CAJA-13) | **Dinero D4** | ✅ |
+| `CronogramaCalculoTest` | `simpleSaldo_conservaCapital_interesDecreciente` | SIMPLE_SALDO: Σamort=capital, interés decreciente (RN-CRON-02) | **Dinero D3** | ✅ |
+| `CronogramaCalculoTest` | `simpleFlat_conservaCapital` | SIMPLE_FLAT: Σamort=capital (RN-CRON-01) | **Dinero D3** | ✅ |
+| `CronogramaCalculoTest` | `frances_conservaCapital` | FRANCES: Σamort=capital (RN-CRON-03) | **Dinero D3** | ✅ |
+| `CronogramaCalculoTest` | `graciaParcial_soloInteres_noAmortiza` | gracia PARCIAL: solo interés (RN-CRON-11) | **Dinero D3** | ✅ |
+| `CronogramaCalculoTest` | `graciaTotal_sinPago` | gracia TOTAL: cuota = 0 (RN-CRON-12) | **Dinero D3** | ✅ |
 
-**Total: 23 pruebas en verde.**
+**Total: 28 pruebas en verde.**
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -50,7 +55,7 @@
 |---|---|---|---|
 | **D1** | Conservación del saldo | 🟡 parcial | `DineroConservacionTest` (desembolso EFECTIVO ✅ / DESCONTADO destapa HALL-06) |
 | **D2** | Trazabilidad (todo movimiento registrado) | ⏳ pendiente | — |
-| **D3** | Exactitud de montos | 🟡 parcial | `pagoCuotaVencida_cobraMora` |
+| **D3** | Exactitud de montos | ✅ | `CronogramaCalculoTest` (Σamort=capital, redondeo 0.10) + `pagoCuotaVencida_cobraMora` |
 | **D4** | Cuadre cuadrado/descuadrado | ✅ | `CajaCierreTest` (cuadrado, descuadrado, billetaje exacto, observación) |
 | **D5** | Extorno reversible | 🟡 parcial | `DineroConservacionTest` (extorno desembolso destapa HALL-08) |
 | **D6** | No hay dinero sin caja | ✅ | `desembolsar_sinCajaAbierta…` |

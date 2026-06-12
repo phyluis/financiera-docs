@@ -109,10 +109,10 @@ flowchart TD
 
 | Regla | Prueba | Estado |
 |---|---|---|
-| RN-CRON-02 (SIMPLE_SALDO genera cronograma) | `FlujoPrestamoIntegrationTest` (indirecto: 6 cuotas) | 🟡 |
-| RN-CRON-05..07 (redondeo + Σamort=capital) | _pendiente (clave 🔴 D3)_ | ❌ |
-| RN-CRON-01/03 (FLAT/FRANCES exactos) | _pendiente_ | ❌ |
-| RN-CRON-10..12 (gracia) | _pendiente_ | ❌ |
+| RN-CRON-02 (SIMPLE_SALDO, interés decreciente) | `CronogramaCalculoTest.simpleSaldo_conservaCapital…` | ✅ |
+| RN-CRON-05..07 (redondeo 0.10 + Σamort=capital, D3) | `CronogramaCalculoTest` (los 5 casos, `assertConservaCapital`) | ✅ |
+| RN-CRON-01/03 (FLAT/FRANCES conservan capital) | `CronogramaCalculoTest.simpleFlat…` / `frances…` | ✅ |
+| RN-CRON-11/12 (gracia PARCIAL/TOTAL) | `CronogramaCalculoTest.graciaParcial…` / `graciaTotal…` | ✅ |
 | RN-CRON-15 (día hábil) | _pendiente_ | ❌ |
 
 > Objetivo de la **Fase 3 — Cálculo** del [plan de pruebas](../desarrollo/plan-de-pruebas.md).
