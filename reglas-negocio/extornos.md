@@ -87,16 +87,14 @@ stateDiagram-v2
 
 ## 6. ⚠️ Hallazgo de dinero detectado
 
-### HALL-08 — Extornar pago/desembolso NO neutraliza el movimiento de caja asociado
-- **Severidad:** 🔴 Alta (dinero) · **Estado:** 🔍 En análisis
-- Los handlers de `PAGO_CUOTA` y `DESEMBOLSO` revierten el **lado préstamo** (cuota, saldo,
-  estado) pero **no marcan** el `movimiento_caja` automático (`COBRO_CUOTA` / `DESEMBOLSO_PRESTAMO`)
-  como `anulado`/`extornado`. El handler de movimientos manuales **sí** lo hace.
-- **Impacto:** tras extornar un pago, el INGRESO sigue contando en el cuadre (la caja "tiene" un
-  dinero que ya no corresponde a un pago válido); tras extornar un desembolso, el EGRESO sigue
-  contando. Posible **descuadre** salvo que exista un reverso manual de caja por separado.
-- **A confirmar:** ¿el flujo operativo espera que el cajero registre además un movimiento de caja
-  inverso (devolución/recuperación de efectivo)? → verificar con una prueba de conservación (D5).
+### HALL-08 — Extornar pago/desembolso no neutralizaba el movimiento de caja  ✅ CORREGIDO
+- **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ Corregido (2026-06-12)
+- Antes, los handlers de `PAGO_CUOTA` y `DESEMBOLSO` revertían el **lado préstamo** pero **no
+  marcaban** el `movimiento_caja` automático (`COBRO_CUOTA` / `DESEMBOLSO_PRESTAMO`) como
+  `anulado`/`extornado` → seguía contando en el cuadre.
+- **Fix:** ambos handlers ahora **neutralizan** los movimientos de caja asociados (buscados por
+  `referencia` = N° contrato / N° recibo): los marcan `anulado=true` + `extornado=true`, igual que
+  `MovimientoCajaExtornoHandler`. Validado por `DineroConservacionTest.extornoDesembolso_neutralizaCaja`.
 
 ---
 
@@ -120,7 +118,7 @@ stateDiagram-v2
 | RN-EXT-04 (rollback si falla, tx) | _pendiente_ | ❌ |
 | RN-EXT-07..09 (reversa de pago, D5) | _pendiente (clave 🔴)_ | ❌ |
 | RN-EXT-11/12 (reversa de desembolso, D5) | _pendiente (clave 🔴)_ | ❌ |
-| RN-EXT-13 + HALL-08 (neutralización en caja) | _pendiente (clave 🔴)_ | ❌ |
+| RN-EXT-13 + HALL-08 (neutralización en caja) | `DineroConservacionTest.extornoDesembolso_neutralizaCaja` | ✅ |
 
 > 🔴 Junto con Caja y Movimientos, los extornos son el núcleo de la **Fase 1 — DINERO**.
 

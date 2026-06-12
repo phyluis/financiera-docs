@@ -64,19 +64,19 @@
 - **Acción propuesta:** evaluar que el movimiento de caja sea parte de la **misma transacción**
   (que su fallo revierta el pago/desembolso), o un mecanismo de reconciliación.
 
-### HALL-08 · Extornar pago/desembolso no neutraliza el movimiento de caja  ✅ CONFIRMADO
-- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Confirmado con prueba**
+### HALL-08 · Extornar pago/desembolso no neutraliza el movimiento de caja  ✅ CORREGIDO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
 - **Regla:** `RN-EXT` / HALL-08 · **Origen:** documentación de Extornos (#5)
-- **Evidencia:** `PagoCuotaExtornoHandler` y `DesembolsoExtornoHandler` revierten el lado
-  préstamo pero **no marcan** el `movimiento_caja` automático (`COBRO_CUOTA`/`DESEMBOLSO_PRESTAMO`)
-  como `anulado`/`extornado`. En cambio `MovimientoCajaExtornoHandler` **sí** lo hace.
-- **Prueba (verde):** `DineroConservacionTest.extornoDesembolso_noNeutralizaCaja`: tras aprobar el
-  extorno, el préstamo vuelve a `APROBADO` pero `sumEgresosPorApertura` **sigue == bruto** (el
-  EGRESO no se neutralizó).
-- **Impacto confirmado:** tras extornar un pago/desembolso, el INGRESO/EGRESO sigue contando en el
-  cuadre → descuadre salvo reverso manual de caja por separado.
-- **Acción propuesta:** que los handlers de PAGO_CUOTA y DESEMBOLSO marquen también el movimiento
-  de caja asociado (`anulado`/`extornado`), o confirmar el flujo operativo de reverso de efectivo.
+- **Evidencia original:** `PagoCuotaExtornoHandler` y `DesembolsoExtornoHandler` revertían el lado
+  préstamo pero **no marcaban** el `movimiento_caja` automático como `anulado`/`extornado`.
+- **Fix aplicado:** ambos handlers ahora **neutralizan los movimientos de caja asociados** (por
+  `referencia` = N° contrato / N° recibo): los marcan `anulado=true` + `extornado=true`. Se agregó
+  `MovimientoCajaRepository.findByReferencia`. El saldo de caja suma solo `anulado=false`, así el
+  reverso se refleja en el cuadre — consistente con `MovimientoCajaExtornoHandler`.
+- **Prueba (verde):** `DineroConservacionTest.extornoDesembolso_neutralizaCaja`: tras el extorno,
+  el préstamo vuelve a `APROBADO` y `sumEgresosPorApertura` queda en **0**.
+- **Supuesto:** el reverso asume que el efectivo vuelve físicamente (cliente devuelve el desembolso
+  / cajero devuelve el cobro), que es el caso normal de un extorno.
 
 ### HALL-09 · Calculadora de cuotas duplicada / legacy con enum inconsistente
 - **Tipo:** 🐞 BUG / ✨ Mejora · **Severidad:** 🟧 Media · **Estado:** 🔍 En análisis
@@ -158,8 +158,8 @@
 
 | Estado | Cantidad |
 |---|---|
-| ✅ Corregido (con fix + prueba) | 1 (HALL-06 doble conteo cargo descontado) |
-| 🔴 Confirmado con prueba (falta fix) | 2 (HALL-08 extorno no neutraliza caja, HALL-11 tasa aprobada ignorada en SIMPLE) |
+| ✅ Corregido (con fix + prueba) | 2 (HALL-06 doble conteo cargo descontado, HALL-08 extorno no neutraliza caja) |
+| 🔴 Confirmado con prueba (falta fix) | 1 (HALL-11 tasa aprobada ignorada en SIMPLE) |
 | 🔍 En análisis | 3 (HALL-07 sin tx, HALL-09 calc duplicada, HALL-10 cuota estimada≠real) |
 | ⏳ Decisión pendiente (dinero) | 1 (HALL-01 mora) |
 | ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |

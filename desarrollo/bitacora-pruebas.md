@@ -29,7 +29,7 @@
 | `PagosIntegrationTest` | `pagoCuotaVencida_cobraMora` | cuota vencida → `importeMora` > 0 + `PAGADO` | **Dinero D3** | ✅ |
 | `DineroConservacionTest` | `desembolsoEfectivo_conservaCaja` | cargo EFECTIVO → saldo teórico = físico | **Dinero D1** | ✅ |
 | `DineroConservacionTest` | `desembolsoDescontado_inflaSaldoTeoricoEnElCargo` | cargo DESCONTADO → teórico inflado en `cargo` (**confirma HALL-06**) | **Dinero D1** | ✅ |
-| `DineroConservacionTest` | `extornoDesembolso_noNeutralizaCaja` | extornar desembolso → préstamo revierte pero EGRESO sigue en caja (**confirma HALL-08**) | **Dinero D5** | ✅ |
+| `DineroConservacionTest` | `extornoDesembolso_neutralizaCaja` | extornar desembolso → préstamo revierte **y** EGRESO se neutraliza (**HALL-08 corregido**) | **Dinero D5** | ✅ |
 | `TasaAprobadaCronogramaTest` | `productoSimple_ignoraLaTasaAprobada_usaLaDelProducto` | SIMPLE: cronograma usa tasa del producto, no la aprobada (**confirma HALL-11**) | **Dinero D3** | ✅ |
 
 **Total: 17 pruebas en verde.**
