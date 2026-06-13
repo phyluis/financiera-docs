@@ -142,8 +142,10 @@
 - **Prueba (verde):** `PagoLiquidacionTest.pagarTodasLasCuotas_liquidaElPrestamo`.
 - **Migración de históricos (lista):** `db/migration-2026-06-hall12-liquidado.sql` corrige los
   préstamos pagados antes del fix (`CANCELADO` con **todas** las cuotas `PAGADO` → `LIQUIDADO`),
-  sin tocar las cancelaciones administrativas. Validada por `MigracionHall12Test`. **Correr en
-  dev/qa/prod** (incluye queries de revisión y verificación comentadas).
+  sin tocar las cancelaciones administrativas. Validada por `MigracionHall12Test`.
+- **Urgencia (2026-06-13):** **producción aún sin datos** → la migración **NO se necesita en prod**
+  (el fix deja los nuevos pagos en `LIQUIDADO` desde el inicio). Solo correrla en dev/qa **si** ahí
+  hay préstamos de prueba pagados con el comportamiento viejo.
 
 ---
 

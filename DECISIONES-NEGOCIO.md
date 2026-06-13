@@ -100,9 +100,9 @@ fija por producto o ajustable por comité.
 > atomicidad, HALL-08 extorno↔caja, HALL-12 pagado→LIQUIDADO) y la calculadora legacy eliminada
 > (HALL-09). Estas **dos decisiones** son lo único que queda del repaso que depende de negocio.
 >
-> ℹ️ Nota operativa (HALL-12): los préstamos pagados **antes** del fix quedaron como `CANCELADO`
-> en la BD. El script de migración ya está listo y validado con prueba
-> (`financiera-backend/src/main/resources/db/migration-2026-06-hall12-liquidado.sql`) — **correr
-> en dev/qa antes de producción**.
+> ℹ️ Nota operativa (HALL-12): el script de migración de históricos está listo y validado
+> (`financiera-backend/src/main/resources/db/migration-2026-06-hall12-liquidado.sql`). **Producción
+> aún sin datos → no se necesita en prod**; solo aplica en dev/qa si hay préstamos de prueba
+> pagados con el comportamiento viejo. El fix de código deja los nuevos pagos en `LIQUIDADO`.
 
 *Documento de decisión — 2026-06-12.*
