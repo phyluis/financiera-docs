@@ -56,8 +56,12 @@
 | `MovimientoTrazabilidadTest` | `pago_registraIngresoConConceptoYMonto` | pago → INGRESO `COBRO_CUOTA` = importe cobrado | **Dinero D2** | ✅ |
 | `MoraDiasHabilesTest` | `fijoDiarioHabiles_excluyeSoloDomingo` | mora días hábiles: excluye solo domingo (sábado cuenta) | Mora · **HALL-01** | ✅ |
 | `MoraDiasHabilesTest` | `cajaYCobranzaPorcentaje_coinciden_enDiasHabiles` | caja y cobranza cobran igual, por días hábiles (HALL-01 corregido) | Mora · **HALL-01** | ✅ |
+| `BovedaRemesaTest` | `crearHabilitacion_quedaPendiente` | bóveda: crear remesa → PENDIENTE (RN-BOV-01) | Bóveda | ✅ |
+| `BovedaRemesaTest` 🐘 | `cajeroConfirmaSuHabilitacion_quedaConfirmadaYDisponible` | confirmar → CONFIRMADA y disponible para abrir caja (RN-BOV-04/05) | Bóveda | ✅ |
+| `BovedaRemesaTest` | `noSePuedeConfirmarDosVeces` | no confirmar dos veces la misma remesa (RN-BOV-02) | Bóveda | ✅ |
+| `BovedaRemesaTest` | `otroCajeroNoPuedeConfirmar` | solo el destinatario confirma su habilitación (RN-BOV-03) | Bóveda | ✅ |
 
-**Total backend: 42 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 46 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -174,6 +178,8 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 | 2026-06-12 | Extornos completos (D5/D7) + trazabilidad D2 → 7 invariantes del dinero cubiertas. |
 | 2026-06-12 | **HALL-01 corregido**: mora en días hábiles (solo domingo no laborable); caja=cobranza. |
 | 2026-06-12 | **40 tests backend + 4 E2E en verde.** Pendiente decisión: HALL-11 (tasa SIMPLE). |
+| 2026-06-13 | HALL-11 corregido (manda el comité, respeta rango del producto) + scope del cajero. |
+| 2026-06-13 | Módulo **Bóveda** documentado y probado (RN-BOV, habilitación de cajero). **46 tests backend.** |
 
 ---
 
