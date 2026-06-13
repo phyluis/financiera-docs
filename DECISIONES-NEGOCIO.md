@@ -85,7 +85,8 @@ fija por producto o ajustable por comité.
 > (HALL-09). Estas **dos decisiones** son lo único que queda del repaso que depende de negocio.
 >
 > ℹ️ Nota operativa (HALL-12): los préstamos pagados **antes** del fix quedaron como `CANCELADO`
-> en la BD — hay un script de migración pendiente (`CANCELADO` con todas las cuotas `PAGADO` →
-> `LIQUIDADO`) que conviene correr en dev/qa antes de producción.
+> en la BD. El script de migración ya está listo y validado con prueba
+> (`financiera-backend/src/main/resources/db/migration-2026-06-hall12-liquidado.sql`) — **correr
+> en dev/qa antes de producción**.
 
 *Documento de decisión — 2026-06-12.*

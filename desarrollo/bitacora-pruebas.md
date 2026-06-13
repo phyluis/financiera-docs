@@ -45,8 +45,9 @@
 | `PagoLiquidacionTest` | `pagarTodasLasCuotas_liquidaElPrestamo` | pagar todo → `LIQUIDADO` (**HALL-12 corregido**) | RN-PAGO | ✅ |
 | `PagoLiquidacionTest` | `pagoExactoDeCuota_quedaPagada` | pago exacto → PAGADO | RN-PAGO | ✅ |
 | `PagoLiquidacionTest` | `pagoConExcedente_seAplicaASiguienteCuota` | excedente → abona la cuota siguiente | RN-PAGO | ✅ |
+| `MigracionHall12Test` | `migracion_soloPasaALiquidadoLosPagados` | migración HALL-12: pagado→LIQUIDADO, cancelado admin intacto | Migración | ✅ |
 
-**Total backend: 31 pruebas en verde.**
+**Total backend: 32 pruebas en verde.**
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 

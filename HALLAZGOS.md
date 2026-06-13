@@ -132,8 +132,10 @@
   `LIQUIDADO`; auto-sanación → `LIQUIDADO`; ajustado el chequeo de NORMALIZADO. `CANCELADO`
   queda reservado para la cancelación administrativa (3 devoluciones).
 - **Prueba (verde):** `PagoLiquidacionTest.pagarTodasLasCuotas_liquidaElPrestamo`.
-- **Pendiente menor:** datos históricos — préstamos pagados antes del fix quedaron `CANCELADO`
-  en BD; evaluar script de migración (`CANCELADO` con todas las cuotas PAGADO → `LIQUIDADO`).
+- **Migración de históricos (lista):** `db/migration-2026-06-hall12-liquidado.sql` corrige los
+  préstamos pagados antes del fix (`CANCELADO` con **todas** las cuotas `PAGADO` → `LIQUIDADO`),
+  sin tocar las cancelaciones administrativas. Validada por `MigracionHall12Test`. **Correr en
+  dev/qa/prod** (incluye queries de revisión y verificación comentadas).
 
 ---
 
