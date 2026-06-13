@@ -67,8 +67,11 @@
 | `CarteraAsignacionTest` | `transferirMasiva_mueveTodosLosClientes` | transferencia masiva mueve todos los clientes (RN-CART-02) | Cartera | ✅ |
 | `CarteraAsignacionTest` | `transferirMasiva_mismoOrigenYDestino_rechazada` | no transferir al mismo analista (RN-CART-03) | Cartera | ✅ |
 | `CarteraAsignacionTest` | `transferirMasiva_origenSinClientes_rechazada` | no transferir desde analista sin clientes (RN-CART-04) | Cartera | ✅ |
+| `MetaColocacionTest` | `guardar_creaMeta` | meta de colocación creada (RN-META) | Metas | ✅ |
+| `MetaColocacionTest` | `guardar_esUpsert_actualizaSinDuplicar` | guardar es upsert: actualiza, no duplica (RN-META-01/02) | Metas | ✅ |
+| `MetaColocacionTest` | `listarPorAgenciaYAnio_filtraPorAgencia` | listar metas filtra por agencia (RN-META-04) | Metas | ✅ |
 
-**Total backend: 53 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 56 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 

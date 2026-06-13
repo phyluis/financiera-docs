@@ -77,7 +77,7 @@ Cada archivo `reglas-negocio/<modulo>.md` sigue esta plantilla:
 | 12 | Garantías y garantes | ✅ `garantias-garantes.md` | — | — | ✅ `GarantiaBienTest` (3) · garantes ❌ | 🟡 bienes ✅ |
 | 13 | Bóveda / tesorería | ✅ `boveda.md` | ✅ | — | ✅ `BovedaRemesaTest` (4, PG) | ✅ doc lista |
 | 14 | Cartera | ✅ `cartera.md` | — | — | ✅ `CarteraAsignacionTest` (4) | ✅ doc lista |
-| 15 | Metas de colocación | ❌ | ❌ | ❌ | ❌ | 🟦 P4 |
+| 15 | Metas de colocación | ✅ `metas-colocacion.md` | — | — | ✅ `MetaColocacionTest` (3) | ✅ doc lista |
 
 Leyenda: ✅ completo · 🟡 parcial · ⚠️ con deriva detectada · ❌ pendiente
 
