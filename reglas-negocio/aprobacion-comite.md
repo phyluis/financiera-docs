@@ -42,6 +42,7 @@ stateDiagram-v2
 | **RN-APRO-03** | Enviar a comité: `ADMIN`, `GERENTE_AGENCIA`, `SUPERVISOR`, `ANALISTA`; decidir: `ADMIN`, `COMITE`, `ANALISTA` | `@PreAuthorize` |
 | **RN-APRO-04** | Una aprobación ya `APROBADO`/`RECHAZADO` **no puede editarse** | `actualizar()` :240 |
 | **RN-APRO-05** 💰 | Para **APROBAR** se exige producto, monto, tasa y plazo **finales** (si falta → `IllegalArgumentException`) | `actualizar()` :252 |
+| **RN-APRO-05b** 💰 | La **tasa aprobada manda** (decisión final del comité) pero **debe respetar el rango del producto** (`tasaMin`/`tasaMax`); fuera de rango → rechazada (HALL-11) | `actualizar()` |
 | **RN-APRO-06** | Para **RECHAZAR/DEVOLVER** se exige comentario (motivo / qué subsanar) | `actualizar()` :260 |
 | **RN-APRO-07** | El presidente (sección 5) ajusta monto y tasa, **no cambia el producto** acordado por el comité | `crearPrestamoDesdeAprobacion` comentario |
 
@@ -66,12 +67,13 @@ stateDiagram-v2
 
 ### HALL-11 — La tasa aprobada por el comité no se aplicaba en productos SIMPLE  ✅ CORREGIDO
 - **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ Corregido (2026-06-12)
-- **Decisión:** manda el comité (la tasa está viva; se usa su último valor aprobado).
+- **Decisión:** manda el comité (la tasa está viva; se usa su último valor aprobado), **pero debe
+  respetar el rango del producto** (`tasaMin`/`tasaMax`).
 - Antes: `tasaInteresPeriodo = producto.getTasaInteres()` → los productos SIMPLE leían ese campo e
   ignoraban la tasa aprobada (FRANCES/ALEMAN sí la usaban vía `tasaInteresAnual`).
-- **Fix:** `tasaInteresPeriodo = tasaFinalAprobada` (fallback al producto solo si no hay aprobada).
-  Ahora todos los tipos usan la tasa del comité. Validado por
-  `TasaAprobadaCronogramaTest.productoSimple_usaLaTasaAprobadaPorElComite`.
+- **Fix:** (1) `tasaInteresPeriodo = tasaFinalAprobada` → todos los tipos usan la tasa del comité;
+  (2) la aprobación **rechaza** una tasa fuera de `[tasaMin, tasaMax]`. Validado por
+  `TasaAprobadaCronogramaTest` (usa la del comité dentro de rango; rechaza fuera de rango).
 
 ### HALL-09 (ampliado) — Hay **tres** motores de cálculo de cuotas
 - `PrestamoCalculator` (cronograma persistido, +ALEMAN) · `ProductoCalculator` (simulación) ·

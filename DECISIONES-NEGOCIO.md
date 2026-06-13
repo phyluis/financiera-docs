@@ -51,8 +51,10 @@ sobre la misma cuota (debe dar igual).
 ## Decisión 2 — Tasa de interés: producto o comité  (HALL-11) — ✅ RESUELTO (2026-06-12)
 
 > **Definido por el cliente:** **manda el comité** — la tasa está viva; el comité puede cambiar o
-> mantener la decisión del analista, y se usa su último valor aprobado. **Fix aplicado** y validado
-> (`TasaAprobadaCronogramaTest`): en productos SIMPLE el cronograma ahora usa `tasaFinalAprobada`.
+> mantener la decisión del analista, y se usa su último valor aprobado, **pero debe respetar el
+> rango configurado del producto** (`tasaMin`/`tasaMax`): fuera de rango, la aprobación se rechaza.
+> **Fix aplicado** y validado (`TasaAprobadaCronogramaTest`): en productos SIMPLE el cronograma usa
+> `tasaFinalAprobada`, y se valida el rango al aprobar.
 > *(El resto de esta sección queda como registro histórico.)*
 
 ### (Histórico) Contexto que se evaluó

@@ -31,6 +31,7 @@
 | `DineroConservacionTest` | `desembolsoDescontado_conservaCaja` | cargo DESCONTADO → también conserva (**HALL-06 corregido**) | **Dinero D1** | ✅ |
 | `DineroConservacionTest` | `extornoDesembolso_neutralizaCaja` | extornar desembolso → préstamo revierte **y** EGRESO se neutraliza (**HALL-08 corregido**) | **Dinero D5** | ✅ |
 | `TasaAprobadaCronogramaTest` | `productoSimple_usaLaTasaAprobadaPorElComite` | SIMPLE: cronograma usa la tasa **aprobada por el comité** (**HALL-11 corregido**) | **Dinero D3** | ✅ |
+| `TasaAprobadaCronogramaTest` | `comite_noPuedeAprobarTasaFueraDelRangoDelProducto` | la tasa del comité debe respetar `tasaMin/tasaMax` del producto | **Dinero** · RN-APRO-05b | ✅ |
 | `MovimientoAtomicoTest` | `desembolso_siFallaElMovimientoDeCaja_revierteTodo` | si falla el movimiento → desembolso revierte (**HALL-07 corregido**) | **Dinero D1/D2** | ✅ |
 | `CajaCierreTest` | `segundaCajaMismoDia_esRechazada` | un cajero, una caja por día (RN-CAJA-03) | Caja | ✅ |
 | `CajaCierreTest` | `cierreCuadrado_quedaCerrada` | contado = teórico → CERRADA, dif 0 (RN-CAJA-05/13) | **Dinero D4** | ✅ |
@@ -55,7 +56,7 @@
 | `MoraDiasHabilesTest` | `fijoDiarioHabiles_excluyeSoloDomingo` | mora días hábiles: excluye solo domingo (sábado cuenta) | Mora · **HALL-01** | ✅ |
 | `MoraDiasHabilesTest` | `cajaYCobranzaPorcentaje_coinciden_enDiasHabiles` | caja y cobranza cobran igual, por días hábiles (HALL-01 corregido) | Mora · **HALL-01** | ✅ |
 
-**Total backend: 40 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 41 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 

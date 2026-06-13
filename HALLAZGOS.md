@@ -110,15 +110,19 @@
 - **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
 - **Regla:** `RN-APRO` / HALL-11 · **Origen:** documentación de Aprobación/Comité (#8)
 - **Decisión de negocio:** **manda el comité** — la tasa está viva; el comité puede cambiar o
-  mantener la decisión del analista, y se usa **su último valor aprobado**.
+  mantener la decisión del analista, y se usa **su último valor aprobado**. **PERO** la tasa
+  aprobada **debe respetar el rango configurado del producto** (`tasaMin`/`tasaMax`).
 - **Evidencia original:** `crearPrestamoDesdeAprobacion` asignaba `tasaInteresPeriodo =
   producto.getTasaInteres()`; los productos SIMPLE leen `tasaInteresPeriodo` → ignoraban la tasa
   aprobada (FRANCES/ALEMAN sí la usaban vía `tasaInteresAnual`).
-- **Fix aplicado:** `tasaInteresPeriodo = tasaFinalAprobada` (con fallback al producto solo si no
-  hubiera tasa aprobada). Ahora todos los tipos usan la tasa del comité.
-- **Prueba (verde):** `TasaAprobadaCronogramaTest.productoSimple_usaLaTasaAprobadaPorElComite`:
-  producto SIMPLE_SALDO 5%, comité aprueba 10% → el cronograma cobra interés **100.00** (la del
-  comité), no 50.00.
+- **Fix aplicado (2 partes):**
+  1. `tasaInteresPeriodo = tasaFinalAprobada` (con fallback al producto solo si no hay aprobada) —
+     todos los tipos usan la tasa del comité.
+  2. **Validación en la aprobación**: si `tasaFinalAprobada` está fuera de `[tasaMin, tasaMax]` del
+     producto → se **rechaza** la aprobación (`IllegalArgumentException`).
+- **Pruebas (verdes):** `TasaAprobadaCronogramaTest`:
+  `productoSimple_usaLaTasaAprobadaPorElComite` (comité 10% dentro del rango 5–12 → cronograma
+  cobra 100) y `comite_noPuedeAprobarTasaFueraDelRangoDelProducto` (comité 20% > máx 12 → rechazado).
 
 ---
 
