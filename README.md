@@ -49,6 +49,7 @@ Sistema financiero white-label para gestión de créditos, cobranza y tesorería
 - [Prototipos UI](desarrollo/prototipos/)
 
 ### 🚀 Despliegue
+- [**Arquitectura de despliegue** (dónde corre el sistema + diagrama)](despliegue/arquitectura-despliegue.md)
 - [Ambientes](despliegue/ambientes.md)
 - [Arquitectura de producción (Nginx)](despliegue/arquitectura-produccion-nginx.md)
 - [Despliegue CrediDar en AWS](despliegue/despliegue-credidar-aws.md)
