@@ -164,7 +164,8 @@ flowchart LR
 | RN-ROL (sin token → 401/403) | `RbacIntegrationTest.desembolso_sinToken*` | ✅ |
 | RN-ROL-01 (solo ADMIN crea usuario) | _pendiente_ | ❌ |
 | RN-ROL-07 (bloqueo por intentos) | _pendiente_ | ❌ |
-| Scope cajero/analista/agencia | _pendiente (Fase 2)_ | ❌ |
+| Scope analista/agencia/global | `ScopeCarteraClientesPostgresTest` (PostgreSQL real) | ✅ |
+| Scope cajero (sus registros) | _pendiente_ | ❌ |
 
 ---
 

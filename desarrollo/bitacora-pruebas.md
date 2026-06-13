@@ -46,8 +46,10 @@
 | `PagoLiquidacionTest` | `pagoExactoDeCuota_quedaPagada` | pago exacto → PAGADO | RN-PAGO | ✅ |
 | `PagoLiquidacionTest` | `pagoConExcedente_seAplicaASiguienteCuota` | excedente → abona la cuota siguiente | RN-PAGO | ✅ |
 | `MigracionHall12Test` | `migracion_soloPasaALiquidadoLosPagados` | migración HALL-12: pagado→LIQUIDADO, cancelado admin intacto | Migración | ✅ |
+| `PostgresContextLoadTest` 🐘 | `contextLoadsConPostgresReal` | PostgreSQL real (Testcontainers) bootea + SQL nativo | infraestructura | ✅ |
+| `ScopeCarteraClientesPostgresTest` 🐘 | `scope_cadaRolVeSoloLoQueLeCorresponde` | scope: analista→sus clientes, gerente→su agencia, admin→todo (RN-ROL) | **Seguridad de datos** | ✅ |
 
-**Total backend: 32 pruebas en verde.**
+**Total backend: 34 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -94,8 +96,8 @@
 | Extornos | 1 caso (desembolso neutraliza) | 🟡 falta pago y no-doble-extorno |
 | Cálculo por producto (FLAT/SALDO/FRANCES + gracia) | 5 casos (`CronogramaCalculoTest`) | ✅ |
 | Tasa aprobada vs producto | 1 caso (fija HALL-11, pendiente decisión) | 🟡 |
-| **Scope por agencia/rol** | 0 — requiere Testcontainers (SQL nativo PG) | 🔴 pendiente |
-| Reportes / documentos | jrxml compila | 🟡 mínimo |
+| **Scope por agencia/rol** | 1 caso (`ScopeCarteraClientesPostgresTest`, PG real) | ✅ inicial |
+| Reportes / documentos | jrxml compila + 1 reporte con scope (cartera clientes) | 🟡 inicial |
 | E2E (Playwright) | 4 casos (smoke + login + dashboard) | ✅ inicial |
 
 ---
@@ -120,12 +122,16 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 - ⏳ Restan: mora FIJO/FIJO_DIARIO_HABILES, mora desde fecha fin, fechas en día hábil.
 - ⚠️ Tasa aprobada vs producto: **HALL-11 confirmado**, pendiente decisión de negocio.
 
-### 🔴 Fase 2 — Seguridad / Scope *(BLOQUEADA por infra)*
-- `computarScope` vive en SQL nativo PostgreSQL → **no corre en H2**. Requiere **Testcontainers
-  + PostgreSQL** (Docker). Al montarlo, entra también la Fase 4 (reportes con SQL nativo).
+### ✅ Fase 2 — Seguridad / Scope *(DESBLOQUEADA e iniciada, 2026-06-12)*
+- ✅ **Testcontainers + PostgreSQL real** montado (`AbstractPostgresIntegrationTest`, perfil
+  `pgtest`, patrón singleton). Corre el SQL nativo PG que H2 no soportaba.
+- ✅ `computarScope` validado en `carteraClientes`: analista→sus clientes, gerente→su agencia,
+  admin→global (`ScopeCarteraClientesPostgresTest`).
+- ⏳ Restan: scope en otros reportes (movimientos, cuadre, cartera mora) y por cajero.
+- ⚠️ Requiere **Docker corriendo**. `AppApplicationTests` depende de la BD dev real (frágil en CI).
 
-### 🟨 Fase 4 — Reportes / Documentos
-- Cartera, cuadre, cartera mora (con Testcontainers); generación Word/PDF.
+### 🟨 Fase 4 — Reportes / Documentos *(desbloqueada, infra lista)*
+- Con Testcontainers ya disponible: cartera, cuadre, cartera mora (montos + scope); Word/PDF.
 
 ### ✅ Fase 5 — E2E de UI *(INICIADA, 2026-06-12)*
 - ✅ Playwright montado: smoke (sin backend) + login real + dashboard autenticado (4 tests).
@@ -152,7 +158,9 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 | 2026-06-12 | Fase 3 Cálculo: FLAT/SALDO/FRANCES + gracia conservan capital (D3). |
 | 2026-06-12 | Lote Pago: liquidación/excedente → destapó y **corrigió HALL-12** (pagado → LIQUIDADO). |
 | 2026-06-12 | Fase 5 E2E: Playwright montado y verificado contra dev (4 tests: smoke + login + dashboard). |
-| 2026-06-12 | **31 tests backend + 4 E2E en verde.** Pendientes: Scope (Testcontainers), decisiones HALL-01/11. |
+| 2026-06-12 | Migración HALL-12 (script + test). 32 tests. |
+| 2026-06-12 | Fase 2 desbloqueada: **Testcontainers + PostgreSQL** montado; scope de cartera validado (RN-ROL). |
+| 2026-06-12 | **34 tests backend + 4 E2E en verde.** Pendientes: más reportes con scope, decisiones HALL-01/11. |
 
 ---
 

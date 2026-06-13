@@ -31,6 +31,7 @@
 | **Unitario** | lógica pura (cálculo de cuota, mora, redondeo) | JUnit 5 / AssertJ | sin contexto |
 | **Integración (servicios)** | flujo real a través de servicios + JPA | `@SpringBootTest` | **H2 en memoria** (aislado) |
 | **Integración (HTTP/seguridad)** | endpoints + `@PreAuthorize` (RBAC) | `@SpringBootTest` + **MockMvc** + JWT real | **H2 en memoria** |
+| **Integración (SQL nativo / scope)** | reportes y `computarScope` con SQL nativo PG | `@SpringBootTest` + **Testcontainers** | **PostgreSQL real** (Docker) |
 | **Frontend (componente)** | `should create` + lógica de componentes | Karma + Jasmine | navegador headless |
 | **E2E (UI)** | login real + navegación autenticada por la app | **Playwright** (`npm run e2e`) | `ng serve` + backend + BD de pruebas |
 
@@ -38,8 +39,9 @@
 `application-test.properties`, `ddl-auto=create-drop`). **No tocan la BD real.**
 Tests con estado mutable usan `@Transactional` (rollback por método).
 
-> ⚠️ Algunos reportes usan **SQL nativo PostgreSQL**. Si un query no corre en H2, se prueba con
-> **Testcontainers + PostgreSQL real** (perfil aparte) solo para esos casos.
+> ✅ Algunos reportes y el **scope** (`computarScope`) usan **SQL nativo PostgreSQL** que H2 no
+> corre. Para esos casos hay **Testcontainers + PostgreSQL real** (perfil `pgtest`, clase base
+> `AbstractPostgresIntegrationTest`, patrón singleton). **Requiere Docker corriendo.**
 
 ---
 
