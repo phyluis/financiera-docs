@@ -165,7 +165,7 @@ flowchart LR
 | RN-ROL-01 (solo ADMIN crea usuario) | _pendiente_ | ❌ |
 | RN-ROL-07 (bloqueo por intentos) | _pendiente_ | ❌ |
 | Scope analista/agencia/global | `ScopeCarteraClientesPostgresTest` (PostgreSQL real) | ✅ |
-| Scope cajero (sus registros) | _pendiente_ | ❌ |
+| Scope cajero (sus registros) | `ScopeMovimientosCajaPostgresTest` (PostgreSQL real) | ✅ |
 
 ---
 

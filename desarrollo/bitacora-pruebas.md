@@ -49,6 +49,7 @@
 | `MigracionHall12Test` | `migracion_soloPasaALiquidadoLosPagados` | migración HALL-12: pagado→LIQUIDADO, cancelado admin intacto | Migración | ✅ |
 | `PostgresContextLoadTest` 🐘 | `contextLoadsConPostgresReal` | PostgreSQL real (Testcontainers) bootea + SQL nativo | infraestructura | ✅ |
 | `ScopeCarteraClientesPostgresTest` 🐘 | `scope_cadaRolVeSoloLoQueLeCorresponde` | scope: analista→sus clientes, gerente→su agencia, admin→todo (RN-ROL) | **Seguridad de datos** | ✅ |
+| `ScopeMovimientosCajaPostgresTest` 🐘 | `cajeroVeSoloSusMovimientos_adminVeTodos` | scope del **cajero**: ve solo sus movimientos; admin ve todos (RN-ROL) | **Seguridad de datos** | ✅ |
 | `ExtornoPagoTest` | `extornoPago_revierteCuotaYNeutralizaCaja` | extorno de pago: revierte cuota + neutraliza INGRESO (RN-EXT) | **Dinero D5** | ✅ |
 | `ExtornoPagoTest` | `noSePuedeExtornarDosVeces` | no se extorna dos veces el mismo documento (RN-EXT-03) | **Dinero D7** | ✅ |
 | `MovimientoTrazabilidadTest` | `desembolso_registraEgresoConConceptoYMonto` | desembolso → EGRESO `DESEMBOLSO_PRESTAMO` = bruto | **Dinero D2** | ✅ |
@@ -56,7 +57,7 @@
 | `MoraDiasHabilesTest` | `fijoDiarioHabiles_excluyeSoloDomingo` | mora días hábiles: excluye solo domingo (sábado cuenta) | Mora · **HALL-01** | ✅ |
 | `MoraDiasHabilesTest` | `cajaYCobranzaPorcentaje_coinciden_enDiasHabiles` | caja y cobranza cobran igual, por días hábiles (HALL-01 corregido) | Mora · **HALL-01** | ✅ |
 
-**Total backend: 41 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 42 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -103,7 +104,7 @@
 | Extornos | 3 casos (desembolso + pago neutralizan caja, no doble extorno) | ✅ |
 | Cálculo por producto (FLAT/SALDO/FRANCES + gracia) | 5 casos (`CronogramaCalculoTest`) | ✅ |
 | Tasa aprobada vs producto | 1 caso (fija HALL-11, pendiente decisión) | 🟡 |
-| **Scope por agencia/rol** | 1 caso (`ScopeCarteraClientesPostgresTest`, PG real) | ✅ inicial |
+| **Scope por agencia/rol** | 2 casos (cartera clientes + movimientos de caja del cajero, PG real) | ✅ |
 | Reportes / documentos | jrxml compila + 1 reporte con scope (cartera clientes) | 🟡 inicial |
 | E2E (Playwright) | 4 casos (smoke + login + dashboard) | ✅ inicial |
 
@@ -134,9 +135,9 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 ### ✅ Fase 2 — Seguridad / Scope *(DESBLOQUEADA e iniciada, 2026-06-12)*
 - ✅ **Testcontainers + PostgreSQL real** montado (`AbstractPostgresIntegrationTest`, perfil
   `pgtest`, patrón singleton). Corre el SQL nativo PG que H2 no soportaba.
-- ✅ `computarScope` validado en `carteraClientes`: analista→sus clientes, gerente→su agencia,
-  admin→global (`ScopeCarteraClientesPostgresTest`).
-- ⏳ Restan: scope en otros reportes (movimientos, cuadre, cartera mora) y por cajero.
+- ✅ `computarScope` validado: analista→sus clientes / gerente→su agencia / admin→global
+  (`ScopeCarteraClientesPostgresTest`), y **cajero→sus movimientos** (`ScopeMovimientosCajaPostgresTest`).
+- ⏳ Restan: scope en otros reportes (cuadre, cartera mora).
 - ⚠️ Requiere **Docker corriendo**. `AppApplicationTests` depende de la BD dev real (frágil en CI).
 
 ### 🟨 Fase 4 — Reportes / Documentos *(desbloqueada, infra lista)*
