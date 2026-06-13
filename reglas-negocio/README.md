@@ -76,7 +76,7 @@ Cada archivo `reglas-negocio/<modulo>.md` sigue esta plantilla:
 | 11 | Roles, permisos y scope | ✅ `roles-permisos.md` | ✅ | ✅ corregida | ✅ RBAC + scope (PG real) | ✅ doc lista |
 | 12 | Garantías y garantes | ✅ `garantias-garantes.md` | — | — | ✅ `GarantiaBienTest` (3) · garantes ❌ | 🟡 bienes ✅ |
 | 13 | Bóveda / tesorería | ✅ `boveda.md` | ✅ | — | ✅ `BovedaRemesaTest` (4, PG) | ✅ doc lista |
-| 14 | Cartera | ❌ | ❌ | ❌ | ❌ | 🟨 P3 |
+| 14 | Cartera | ✅ `cartera.md` | — | — | ✅ `CarteraAsignacionTest` (4) | ✅ doc lista |
 | 15 | Metas de colocación | ❌ | ❌ | ❌ | ❌ | 🟦 P4 |
 
 Leyenda: ✅ completo · 🟡 parcial · ⚠️ con deriva detectada · ❌ pendiente

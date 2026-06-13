@@ -63,8 +63,12 @@
 | `GarantiaBienTest` | `registrar_calculaPorcentajeCobertura` | garantía: % cobertura = asignado/comercial × 100 (RN-GAR-02) | Garantías | ✅ |
 | `GarantiaBienTest` | `registrar_evaluacionInexistente_lanza404` | no se registra contra evaluación inexistente (RN-GAR-03) | Garantías | ✅ |
 | `GarantiaBienTest` | `noSePuedeActualizarBienDeOtraEvaluacion` | un bien pertenece a su evaluación (RN-GAR-04) | Garantías | ✅ |
+| `CarteraAsignacionTest` | `reasignarIndividual_cambiaElAnalistaActual` | reasignar cliente → cambia analista + historial (RN-CART-01) | Cartera | ✅ |
+| `CarteraAsignacionTest` | `transferirMasiva_mueveTodosLosClientes` | transferencia masiva mueve todos los clientes (RN-CART-02) | Cartera | ✅ |
+| `CarteraAsignacionTest` | `transferirMasiva_mismoOrigenYDestino_rechazada` | no transferir al mismo analista (RN-CART-03) | Cartera | ✅ |
+| `CarteraAsignacionTest` | `transferirMasiva_origenSinClientes_rechazada` | no transferir desde analista sin clientes (RN-CART-04) | Cartera | ✅ |
 
-**Total backend: 49 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 53 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
