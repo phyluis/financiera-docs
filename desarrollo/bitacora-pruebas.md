@@ -60,8 +60,11 @@
 | `BovedaRemesaTest` 🐘 | `cajeroConfirmaSuHabilitacion_quedaConfirmadaYDisponible` | confirmar → CONFIRMADA y disponible para abrir caja (RN-BOV-04/05) | Bóveda | ✅ |
 | `BovedaRemesaTest` | `noSePuedeConfirmarDosVeces` | no confirmar dos veces la misma remesa (RN-BOV-02) | Bóveda | ✅ |
 | `BovedaRemesaTest` | `otroCajeroNoPuedeConfirmar` | solo el destinatario confirma su habilitación (RN-BOV-03) | Bóveda | ✅ |
+| `GarantiaBienTest` | `registrar_calculaPorcentajeCobertura` | garantía: % cobertura = asignado/comercial × 100 (RN-GAR-02) | Garantías | ✅ |
+| `GarantiaBienTest` | `registrar_evaluacionInexistente_lanza404` | no se registra contra evaluación inexistente (RN-GAR-03) | Garantías | ✅ |
+| `GarantiaBienTest` | `noSePuedeActualizarBienDeOtraEvaluacion` | un bien pertenece a su evaluación (RN-GAR-04) | Garantías | ✅ |
 
-**Total backend: 46 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 49 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
