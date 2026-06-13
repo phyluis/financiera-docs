@@ -104,27 +104,22 @@ flowchart LR
 
 ---
 
-## 5. ⚠️ Hallazgo crítico — Mora divergente (cobranza vs caja)
+## 5. Mora (RN-MORA) — días hábiles
 
-> **Tema de dinero. Pendiente de decisión de negocio.** El `MoraCalculator` mantiene
-> **dos reglas distintas** a propósito, y su Javadoc lo declara *"un bug preexistente que queda
-> pendiente de reconciliar"*:
-
-| Contexto | Método | PORCENTAJE cuenta | Gracia | Escala |
-|---|---|---|---|---|
-| Listados de **cobranza** | `paraCobranza` | días **HÁBILES** | respeta | redondeo snapshot |
-| **Cobro real en caja** | `paraPago` | días **CALENDARIO** | sin gracia | fija 2 |
-
-**Consecuencia:** una misma cuota vencida puede mostrar **una mora en la pantalla de cobranza y
-otra al cobrar en caja**. Para `PORCENTAJE`, caja suele cobrar **más** (calendario ≥ hábiles).
+> **Regla de negocio:** la mora se cuenta en **días HÁBILES** en todos los flujos. Día no laborable
+> por defecto = **solo el DOMINGO** (el sábado SÍ cuenta); los feriados se restan aparte.
+> *(Corregido 2026-06-12, HALL-01 — antes la caja cobraba por días calendario.)*
 
 | ID | Regla | Estado |
 |---|---|---|
-| **RN-MORA-01** | `PORCENTAJE`: mora = amortización × (tasaMora/3000) × días | ✅ implementado (días difieren por contexto) |
+| **RN-MORA-01** | `PORCENTAJE`: mora = amortización × (tasaMora/3000) × **días hábiles** (caja y cobranza coinciden) | ✅ |
 | **RN-MORA-02** | `FIJO`: monto fijo tras período de gracia | ✅ |
-| **RN-MORA-03** | `FIJO_DIARIO_HABILES`: monto fijo × días hábiles (excluye sáb/dom/feriados) | ✅ |
+| **RN-MORA-03** | `FIJO_DIARIO_HABILES`: monto fijo × días hábiles (excluye **solo domingo** + feriados) | ✅ |
 | **RN-MORA-04** | Préstamos `DIARIO` con flag `moraDesdeFechaFin`: mora desde la **fecha fin** del préstamo | ✅ |
-| **RN-MORA-05** | **Unificar hábiles vs calendario** entre cobranza y caja | 🔴 **DECISIÓN PENDIENTE** |
+| **RN-MORA-05** | Caja y cobranza unificadas en **días hábiles** (HALL-01 corregido) | ✅ `MoraDiasHabilesTest` |
+
+> ℹ️ Diferencia menor pendiente: la **gracia** se aplica en cobranza pero no en caja — no es parte
+> de esta regla; evaluar aparte si hace falta.
 
 > 👉 Acción recomendada: definir con negocio cuál es la regla correcta (hábiles o calendario),
 > unificar `MoraCalculator`, y blindar con una prueba que compare `paraCobranza` vs `paraPago`

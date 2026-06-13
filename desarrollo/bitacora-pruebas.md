@@ -52,8 +52,10 @@
 | `ExtornoPagoTest` | `noSePuedeExtornarDosVeces` | no se extorna dos veces el mismo documento (RN-EXT-03) | **Dinero D7** | ✅ |
 | `MovimientoTrazabilidadTest` | `desembolso_registraEgresoConConceptoYMonto` | desembolso → EGRESO `DESEMBOLSO_PRESTAMO` = bruto | **Dinero D2** | ✅ |
 | `MovimientoTrazabilidadTest` | `pago_registraIngresoConConceptoYMonto` | pago → INGRESO `COBRO_CUOTA` = importe cobrado | **Dinero D2** | ✅ |
+| `MoraDiasHabilesTest` | `fijoDiarioHabiles_excluyeSoloDomingo` | mora días hábiles: excluye solo domingo (sábado cuenta) | Mora · **HALL-01** | ✅ |
+| `MoraDiasHabilesTest` | `cajaYCobranzaPorcentaje_coinciden_enDiasHabiles` | caja y cobranza cobran igual, por días hábiles (HALL-01 corregido) | Mora · **HALL-01** | ✅ |
 
-**Total backend: 38 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 40 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -123,7 +125,9 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 
 ### ✅ Fase 3 — Cálculo / Productos *(HECHA en lo esencial, 2026-06-12)*
 - ✅ FLAT/SALDO/FRANCES conservan capital; redondeo 0.10; gracia PARCIAL/TOTAL.
-- ⏳ Restan: mora FIJO/FIJO_DIARIO_HABILES, mora desde fecha fin, fechas en día hábil.
+- ✅ **Mora en días hábiles** (HALL-01 corregido): PORCENTAJE y FIJO_DIARIO_HABILES; caja y
+  cobranza unificadas; solo domingo no laborable.
+- ⏳ Restan: mora `FIJO`, mora desde fecha fin, fechas del cronograma en día hábil.
 - ⚠️ Tasa aprobada vs producto: **HALL-11 confirmado**, pendiente decisión de negocio.
 
 ### ✅ Fase 2 — Seguridad / Scope *(DESBLOQUEADA e iniciada, 2026-06-12)*
@@ -165,7 +169,9 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 | 2026-06-12 | Migración HALL-12 (script + test). 32 tests. |
 | 2026-06-12 | Fase 2 desbloqueada: **Testcontainers + PostgreSQL** montado; scope de cartera validado (RN-ROL). |
 | 2026-06-12 | Bloque extornos completo (extorno de pago D5, no doble extorno D7) + trazabilidad D2. |
-| 2026-06-12 | **38 tests backend + 4 E2E en verde · las 7 invariantes del dinero (D1–D7) cubiertas.** Pendientes: más reportes con scope, decisiones HALL-01/11. |
+| 2026-06-12 | Extornos completos (D5/D7) + trazabilidad D2 → 7 invariantes del dinero cubiertas. |
+| 2026-06-12 | **HALL-01 corregido**: mora en días hábiles (solo domingo no laborable); caja=cobranza. |
+| 2026-06-12 | **40 tests backend + 4 E2E en verde.** Pendiente decisión: HALL-11 (tasa SIMPLE). |
 
 ---
 

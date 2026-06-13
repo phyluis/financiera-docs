@@ -9,7 +9,14 @@
 
 ---
 
-## Decisión 1 — Mora: ¿se cuenta en días **hábiles** o **calendario**?  (HALL-01)
+## Decisión 1 — Mora: días hábiles o calendario  (HALL-01) — ✅ RESUELTO (2026-06-12)
+
+> **Definido por el cliente:** la mora se cuenta en **días HÁBILES**; día no laborable por defecto =
+> **solo el DOMINGO** (el sábado SÍ cuenta); los feriados se restan aparte. **Fix aplicado** y
+> validado (`MoraDiasHabilesTest`): caja y cobranza ahora coinciden. *(El resto de esta sección
+> queda como registro histórico de la decisión.)*
+
+### (Histórico) Contexto que se evaluó
 
 ### Qué pasa hoy
 El sistema calcula la mora de **dos maneras distintas** según dónde se mire:

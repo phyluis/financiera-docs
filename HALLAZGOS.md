@@ -23,16 +23,22 @@
 
 ## Hallazgos abiertos (revisar)
 
-### HALL-01 · Mora divergente: cobranza (hábiles) vs caja (calendario)
-- **Tipo:** 🐞 BUG + 🤝 Decisión · **Severidad:** 🔴 Alta (dinero) · **Estado:** ⏳ Decisión pendiente
-- **Regla:** `RN-MORA-05` · **Origen:** documentación del Flujo del Préstamo (#2)
-- **Evidencia:** `service/MoraCalculator.java` → `paraCobranza()` cuenta días **HÁBILES**;
-  `paraPago()` cuenta días **CALENDARIO**. El Javadoc de la clase lo declara *"un bug
-  preexistente que queda pendiente de reconciliar como decisión de negocio"*.
-- **Impacto:** una misma cuota vencida puede mostrar **una mora en la pantalla de cobranza y
-  cobrar otra en caja** (para `PORCENTAJE`, caja suele cobrar más).
-- **Acción propuesta:** definir con negocio la regla correcta (hábiles o calendario), unificar
-  `MoraCalculator`, y blindar con una prueba que compare ambos cálculos sobre la misma cuota.
+### HALL-01 · Mora divergente: cobranza (hábiles) vs caja (calendario)  ✅ CORREGIDO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
+- **Regla:** `RN-MORA` · **Origen:** documentación del Flujo del Préstamo (#2)
+- **Regla de negocio (definida por el cliente):** la mora se cuenta en **días HÁBILES** en todos
+  los flujos; día no laborable por defecto = **solo el DOMINGO** (el sábado SÍ cuenta); los
+  feriados se restan aparte.
+- **Evidencia original:** `paraCobranza()` contaba días hábiles, pero `paraPago()` (cobro en caja)
+  contaba días **CALENDARIO** → la caja cobraba de más. Además, el conteo de hábiles excluía
+  también el **sábado** (cuando el sábado es laborable).
+- **Fix aplicado:** (1) `paraPago` PORCENTAJE ahora cuenta días hábiles (igual que cobranza);
+  (2) el conteo de hábiles excluye **solo el domingo** (+ feriados), no el sábado. Caja y cobranza
+  ahora **coinciden**.
+- **Prueba (verde):** `MoraDiasHabilesTest`: FIJO_DIARIO_HABILES excluye solo domingo (6 días),
+  y caja == cobranza en PORCENTAJE (4.00).
+- **Pendiente menor:** diferencia de **gracia** entre caja y cobranza (caja no aplica gracia) —
+  no es parte de esta regla; evaluar aparte si hace falta.
 
 ### HALL-06 · Doble conteo del cargo en desembolso DESCONTADO  ✅ CORREGIDO
 - **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
@@ -180,11 +186,10 @@
 
 | Estado | Cantidad |
 |---|---|
-| ✅ Corregido (con fix + prueba) | 4 (HALL-06 doble conteo cargo, HALL-07 movimiento no atómico, HALL-08 extorno no neutraliza caja, HALL-12 pagado→LIQUIDADO) |
+| ✅ Corregido (con fix + prueba) | 5 (HALL-01 mora días hábiles, HALL-06 doble conteo cargo, HALL-07 movimiento no atómico, HALL-08 extorno no neutraliza caja, HALL-12 pagado→LIQUIDADO) |
 | ✅ Resuelto (limpieza) | 1 (HALL-09 calculadora legacy eliminada) |
 | 🔴 Confirmado con prueba (falta fix/decisión) | 1 (HALL-11 tasa aprobada ignorada en SIMPLE) |
 | 🔍 En análisis (menor) | 1 (HALL-10 cuota estimada≠real) |
-| ⏳ Decisión pendiente (dinero) | 1 (HALL-01 mora) |
 | ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |
 | 👀 Para vigilar | 0 |
 
