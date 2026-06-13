@@ -106,21 +106,19 @@
 - **Impacto:** el análisis de capacidad/ratio usa una cuota que puede no coincidir con la real.
 - **Acción propuesta:** confirmar si es tolerable (solo "estimado") o unificar las fórmulas.
 
-### HALL-11 · La tasa aprobada por el comité no se aplica en productos SIMPLE  ✅ CONFIRMADO
-- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Confirmado con prueba**
+### HALL-11 · La tasa aprobada por el comité no se aplicaba en productos SIMPLE  ✅ CORREGIDO
+- **Tipo:** 🐞 BUG · **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ **Corregido (2026-06-12)**
 - **Regla:** `RN-APRO` / HALL-11 · **Origen:** documentación de Aprobación/Comité (#8)
-- **Evidencia:** `AprobacionCreditoServiceImpl.crearPrestamoDesdeAprobacion`: `tasaInteresAnual =
-  tasaFinalAprobada` pero `tasaInteresPeriodo = producto.getTasaInteres()`. En `PrestamoCalculator`,
-  FRANCES/ALEMAN leen `tasaInteresAnual` (usa aprobada); SIMPLE_FLAT/SIMPLE_SALDO leen
-  `tasaInteresPeriodo` (usa la del producto, **ignora la aprobada**).
-- **Prueba (verde):** `TasaAprobadaCronogramaTest.productoSimple_ignoraLaTasaAprobada_usaLaDelProducto`:
-  producto SIMPLE_SALDO 5%, comité aprueba 10%, crédito de 1 cuota de 1000 → el cronograma cobra
-  interés **50.00** (5%), no 100.00 (10% aprobado).
-- **Impacto confirmado:** si el comité aprueba una tasa distinta a la del producto, en créditos
-  SIMPLE el cliente paga con la del producto, no la aprobada. Microcrédito suele ser SIMPLE.
-- **Acción propuesta:** definir si la tasa la fija el producto o el comité (decisión de negocio).
-  Si manda el comité, asignar `tasaInteresPeriodo = tasaFinalAprobada` en SIMPLE; tras el fix,
-  actualizar el test para esperar 100.00.
+- **Decisión de negocio:** **manda el comité** — la tasa está viva; el comité puede cambiar o
+  mantener la decisión del analista, y se usa **su último valor aprobado**.
+- **Evidencia original:** `crearPrestamoDesdeAprobacion` asignaba `tasaInteresPeriodo =
+  producto.getTasaInteres()`; los productos SIMPLE leen `tasaInteresPeriodo` → ignoraban la tasa
+  aprobada (FRANCES/ALEMAN sí la usaban vía `tasaInteresAnual`).
+- **Fix aplicado:** `tasaInteresPeriodo = tasaFinalAprobada` (con fallback al producto solo si no
+  hubiera tasa aprobada). Ahora todos los tipos usan la tasa del comité.
+- **Prueba (verde):** `TasaAprobadaCronogramaTest.productoSimple_usaLaTasaAprobadaPorElComite`:
+  producto SIMPLE_SALDO 5%, comité aprueba 10% → el cronograma cobra interés **100.00** (la del
+  comité), no 50.00.
 
 ---
 
@@ -186,9 +184,8 @@
 
 | Estado | Cantidad |
 |---|---|
-| ✅ Corregido (con fix + prueba) | 5 (HALL-01 mora días hábiles, HALL-06 doble conteo cargo, HALL-07 movimiento no atómico, HALL-08 extorno no neutraliza caja, HALL-12 pagado→LIQUIDADO) |
+| ✅ Corregido (con fix + prueba) | 6 (HALL-01 mora días hábiles, HALL-06 doble conteo cargo, HALL-07 movimiento no atómico, HALL-08 extorno no neutraliza caja, HALL-11 tasa del comité en SIMPLE, HALL-12 pagado→LIQUIDADO) |
 | ✅ Resuelto (limpieza) | 1 (HALL-09 calculadora legacy eliminada) |
-| 🔴 Confirmado con prueba (falta fix/decisión) | 1 (HALL-11 tasa aprobada ignorada en SIMPLE) |
 | 🔍 En análisis (menor) | 1 (HALL-10 cuota estimada≠real) |
 | ✅ Resuelto / confirmado correcto | 6 (HALL-02..05, V-01, V-03, V-04) |
 | 👀 Para vigilar | 0 |

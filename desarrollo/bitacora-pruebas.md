@@ -30,7 +30,7 @@
 | `DineroConservacionTest` | `desembolsoEfectivo_conservaCaja` | cargo EFECTIVO → saldo teórico = físico | **Dinero D1** | ✅ |
 | `DineroConservacionTest` | `desembolsoDescontado_conservaCaja` | cargo DESCONTADO → también conserva (**HALL-06 corregido**) | **Dinero D1** | ✅ |
 | `DineroConservacionTest` | `extornoDesembolso_neutralizaCaja` | extornar desembolso → préstamo revierte **y** EGRESO se neutraliza (**HALL-08 corregido**) | **Dinero D5** | ✅ |
-| `TasaAprobadaCronogramaTest` | `productoSimple_ignoraLaTasaAprobada_usaLaDelProducto` | SIMPLE: cronograma usa tasa del producto, no la aprobada (**confirma HALL-11**) | **Dinero D3** | ✅ |
+| `TasaAprobadaCronogramaTest` | `productoSimple_usaLaTasaAprobadaPorElComite` | SIMPLE: cronograma usa la tasa **aprobada por el comité** (**HALL-11 corregido**) | **Dinero D3** | ✅ |
 | `MovimientoAtomicoTest` | `desembolso_siFallaElMovimientoDeCaja_revierteTodo` | si falla el movimiento → desembolso revierte (**HALL-07 corregido**) | **Dinero D1/D2** | ✅ |
 | `CajaCierreTest` | `segundaCajaMismoDia_esRechazada` | un cajero, una caja por día (RN-CAJA-03) | Caja | ✅ |
 | `CajaCierreTest` | `cierreCuadrado_quedaCerrada` | contado = teórico → CERRADA, dif 0 (RN-CAJA-05/13) | **Dinero D4** | ✅ |
@@ -128,7 +128,7 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 - ✅ **Mora en días hábiles** (HALL-01 corregido): PORCENTAJE y FIJO_DIARIO_HABILES; caja y
   cobranza unificadas; solo domingo no laborable.
 - ⏳ Restan: mora `FIJO`, mora desde fecha fin, fechas del cronograma en día hábil.
-- ⚠️ Tasa aprobada vs producto: **HALL-11 confirmado**, pendiente decisión de negocio.
+- ✅ **Tasa del comité aplicada** en SIMPLE (HALL-11 corregido): manda la tasa aprobada por el comité.
 
 ### ✅ Fase 2 — Seguridad / Scope *(DESBLOQUEADA e iniciada, 2026-06-12)*
 - ✅ **Testcontainers + PostgreSQL real** montado (`AbstractPostgresIntegrationTest`, perfil

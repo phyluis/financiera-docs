@@ -64,18 +64,14 @@ stateDiagram-v2
 
 ## 5. ⚠️ Hallazgos detectados
 
-### HALL-11 — La tasa aprobada por el comité no se aplica en productos SIMPLE
-- **Severidad:** 🔴 Alta (dinero) · **Estado:** 🔍 En análisis
-- Al crear el préstamo: `tasaInteresAnual = tasaFinalAprobada` (comité) pero
-  `tasaInteresPeriodo = producto.getTasaInteres()` (producto).
-- El cronograma (`PrestamoCalculator`) lee:
-  - `FRANCES`/`ALEMAN` → `tasaInteresAnual` → **usa la tasa aprobada** ✅
-  - `SIMPLE_FLAT`/`SIMPLE_SALDO` → `tasaInteresPeriodo` → **usa la del producto, ignora la aprobada** ⚠️
-- **Impacto:** si el comité aprueba una tasa distinta a la del producto, en créditos SIMPLE
-  (los de microcrédito) **el cliente paga con la tasa del producto, no la aprobada**.
-- **Acción propuesta:** confirmar la intención (¿tasa fija por producto en SIMPLE?). Si la tasa
-  del comité debe mandar, asignar `tasaInteresPeriodo = tasaFinalAprobada` en SIMPLE; blindar con
-  prueba que compare la tasa aprobada vs la del cronograma.
+### HALL-11 — La tasa aprobada por el comité no se aplicaba en productos SIMPLE  ✅ CORREGIDO
+- **Severidad:** 🔴 Alta (dinero) · **Estado:** ✅ Corregido (2026-06-12)
+- **Decisión:** manda el comité (la tasa está viva; se usa su último valor aprobado).
+- Antes: `tasaInteresPeriodo = producto.getTasaInteres()` → los productos SIMPLE leían ese campo e
+  ignoraban la tasa aprobada (FRANCES/ALEMAN sí la usaban vía `tasaInteresAnual`).
+- **Fix:** `tasaInteresPeriodo = tasaFinalAprobada` (fallback al producto solo si no hay aprobada).
+  Ahora todos los tipos usan la tasa del comité. Validado por
+  `TasaAprobadaCronogramaTest.productoSimple_usaLaTasaAprobadaPorElComite`.
 
 ### HALL-09 (ampliado) — Hay **tres** motores de cálculo de cuotas
 - `PrestamoCalculator` (cronograma persistido, +ALEMAN) · `ProductoCalculator` (simulación) ·
@@ -102,7 +98,7 @@ stateDiagram-v2
 | RN-APRO-05 (aprobar exige finales) | `FlujoNegativoTest.aprobar_sinProductoFinal…` | ✅ |
 | RN-APRO-08..11 (crea préstamo + cronograma) | `FlujoPrestamoIntegrationTest` | ✅ |
 | RN-APRO-03 (permisos comité) | `RbacIntegrationTest` (parcial) | 🟡 |
-| HALL-11 (tasa aprobada vs cronograma SIMPLE) | _pendiente (clave 🔴)_ | ❌ |
+| HALL-11 (tasa del comité aplicada en SIMPLE) | `TasaAprobadaCronogramaTest.productoSimple_usaLaTasaAprobadaPorElComite` | ✅ |
 
 ---
 
