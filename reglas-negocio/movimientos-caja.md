@@ -103,7 +103,7 @@ fallo del movimiento **revierte toda la operación**. Validado por
 
 | Regla | Prueba | Estado |
 |---|---|---|
-| RN-MOV-02 (pago genera INGRESO) | `PagosIntegrationTest` (indirecto) | 🟡 |
+| RN-MOV-02 (pago genera INGRESO `COBRO_CUOTA` por monto) | `MovimientoTrazabilidadTest.pago_registraIngreso…` | ✅ |
 | RN-MOV-03 (desembolso genera EGRESO exacto) | `DineroConservacionTest` (EGRESO = bruto) | ✅ |
 | RN-MOV-05 / HALL-06 (conservación cargo) | `DineroConservacionTest.desembolso{Efectivo,Descontado}_conservaCaja` | ✅ |
 | RN-MOV-08 / HALL-07 (transaccionalidad) | `MovimientoAtomicoTest` | ✅ |

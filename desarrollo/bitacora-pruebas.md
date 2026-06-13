@@ -50,8 +50,10 @@
 | `ScopeCarteraClientesPostgresTest` 🐘 | `scope_cadaRolVeSoloLoQueLeCorresponde` | scope: analista→sus clientes, gerente→su agencia, admin→todo (RN-ROL) | **Seguridad de datos** | ✅ |
 | `ExtornoPagoTest` | `extornoPago_revierteCuotaYNeutralizaCaja` | extorno de pago: revierte cuota + neutraliza INGRESO (RN-EXT) | **Dinero D5** | ✅ |
 | `ExtornoPagoTest` | `noSePuedeExtornarDosVeces` | no se extorna dos veces el mismo documento (RN-EXT-03) | **Dinero D7** | ✅ |
+| `MovimientoTrazabilidadTest` | `desembolso_registraEgresoConConceptoYMonto` | desembolso → EGRESO `DESEMBOLSO_PRESTAMO` = bruto | **Dinero D2** | ✅ |
+| `MovimientoTrazabilidadTest` | `pago_registraIngresoConConceptoYMonto` | pago → INGRESO `COBRO_CUOTA` = importe cobrado | **Dinero D2** | ✅ |
 
-**Total backend: 36 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 38 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -73,15 +75,15 @@
 | Invariante | Descripción | Estado | Prueba |
 |---|---|---|---|
 | **D1** | Conservación del saldo | ✅ | `DineroConservacionTest` (desembolso EFECTIVO y DESCONTADO conservan, tras fix HALL-06) |
-| **D2** | Trazabilidad (todo movimiento registrado) | 🟡 parcial | `DineroConservacionTest` (EGRESO/INGRESO con montos exactos) + `MovimientoAtomicoTest` (atómico, tras fix HALL-07) |
+| **D2** | Trazabilidad (todo movimiento registrado) | ✅ | `MovimientoTrazabilidadTest` (EGRESO `DESEMBOLSO_PRESTAMO` / INGRESO `COBRO_CUOTA` con concepto+monto) + `MovimientoAtomicoTest` (atómico) |
 | **D3** | Exactitud de montos | ✅ | `CronogramaCalculoTest` (Σamort=capital, redondeo 0.10) + `pagoCuotaVencida_cobraMora` |
 | **D4** | Cuadre cuadrado/descuadrado | ✅ | `CajaCierreTest` (cuadrado, descuadrado, billetaje exacto, observación) |
 | **D5** | Extorno reversible | ✅ | `DineroConservacionTest` (desembolso) + `ExtornoPagoTest` (pago revierte + neutraliza caja) |
 | **D6** | No hay dinero sin caja | ✅ | `desembolsar_sinCajaAbierta…` |
 | **D7** | Sin doble cobro / doble extorno | ✅ | `ExtornoPagoTest.noSePuedeExtornarDosVeces` |
 
-> 🟢 **6 de 7 invariantes cubiertas** (D1·D3·D4·D5·D6·D7). Falta solo completar **D2**
-> (verificar el INGRESO del pago contra el movimiento por concepto).
+> 🟢 **Las 7 invariantes del dinero (D1–D7) cubiertas.** El bloque dinero —caja, desembolso,
+> pago, movimientos, extornos— tiene red de seguridad completa.
 
 ---
 
@@ -162,7 +164,8 @@ H2 aislado, flujo completo, RBAC base, negativos, pagos básicos. → 13 tests v
 | 2026-06-12 | Fase 5 E2E: Playwright montado y verificado contra dev (4 tests: smoke + login + dashboard). |
 | 2026-06-12 | Migración HALL-12 (script + test). 32 tests. |
 | 2026-06-12 | Fase 2 desbloqueada: **Testcontainers + PostgreSQL** montado; scope de cartera validado (RN-ROL). |
-| 2026-06-12 | **34 tests backend + 4 E2E en verde.** Pendientes: más reportes con scope, decisiones HALL-01/11. |
+| 2026-06-12 | Bloque extornos completo (extorno de pago D5, no doble extorno D7) + trazabilidad D2. |
+| 2026-06-12 | **38 tests backend + 4 E2E en verde · las 7 invariantes del dinero (D1–D7) cubiertas.** Pendientes: más reportes con scope, decisiones HALL-01/11. |
 
 ---
 
