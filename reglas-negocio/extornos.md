@@ -114,10 +114,10 @@ stateDiagram-v2
 
 | Regla | Prueba | Estado |
 |---|---|---|
-| RN-EXT-03 (no doble extorno, D7) | _pendiente_ | ❌ |
+| RN-EXT-03 (no doble extorno, D7) | `ExtornoPagoTest.noSePuedeExtornarDosVeces` | ✅ |
 | RN-EXT-04 (rollback si falla, tx) | _pendiente_ | ❌ |
-| RN-EXT-07..09 (reversa de pago, D5) | _pendiente (clave 🔴)_ | ❌ |
-| RN-EXT-11/12 (reversa de desembolso, D5) | _pendiente (clave 🔴)_ | ❌ |
+| RN-EXT-07..09 (reversa de pago, D5) | `ExtornoPagoTest.extornoPago_revierteCuotaYNeutralizaCaja` | ✅ |
+| RN-EXT-11/12 (reversa de desembolso, D5) | `DineroConservacionTest.extornoDesembolso_neutralizaCaja` | ✅ |
 | RN-EXT-13 + HALL-08 (neutralización en caja) | `DineroConservacionTest.extornoDesembolso_neutralizaCaja` | ✅ |
 
 > 🔴 Junto con Caja y Movimientos, los extornos son el núcleo de la **Fase 1 — DINERO**.

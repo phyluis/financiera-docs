@@ -48,8 +48,10 @@
 | `MigracionHall12Test` | `migracion_soloPasaALiquidadoLosPagados` | migración HALL-12: pagado→LIQUIDADO, cancelado admin intacto | Migración | ✅ |
 | `PostgresContextLoadTest` 🐘 | `contextLoadsConPostgresReal` | PostgreSQL real (Testcontainers) bootea + SQL nativo | infraestructura | ✅ |
 | `ScopeCarteraClientesPostgresTest` 🐘 | `scope_cadaRolVeSoloLoQueLeCorresponde` | scope: analista→sus clientes, gerente→su agencia, admin→todo (RN-ROL) | **Seguridad de datos** | ✅ |
+| `ExtornoPagoTest` | `extornoPago_revierteCuotaYNeutralizaCaja` | extorno de pago: revierte cuota + neutraliza INGRESO (RN-EXT) | **Dinero D5** | ✅ |
+| `ExtornoPagoTest` | `noSePuedeExtornarDosVeces` | no se extorna dos veces el mismo documento (RN-EXT-03) | **Dinero D7** | ✅ |
 
-**Total backend: 34 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
+**Total backend: 36 pruebas en verde** (🐘 = requieren Docker/Testcontainers, PostgreSQL real).
 
 > Frontend (Karma/Jasmine): 9 smoke tests `should create` (`npm run test:ci`).
 
@@ -74,12 +76,12 @@
 | **D2** | Trazabilidad (todo movimiento registrado) | 🟡 parcial | `DineroConservacionTest` (EGRESO/INGRESO con montos exactos) + `MovimientoAtomicoTest` (atómico, tras fix HALL-07) |
 | **D3** | Exactitud de montos | ✅ | `CronogramaCalculoTest` (Σamort=capital, redondeo 0.10) + `pagoCuotaVencida_cobraMora` |
 | **D4** | Cuadre cuadrado/descuadrado | ✅ | `CajaCierreTest` (cuadrado, descuadrado, billetaje exacto, observación) |
-| **D5** | Extorno reversible | 🟡 parcial | `DineroConservacionTest.extornoDesembolso_neutralizaCaja` (tras fix HALL-08); falta extorno de **pago** |
+| **D5** | Extorno reversible | ✅ | `DineroConservacionTest` (desembolso) + `ExtornoPagoTest` (pago revierte + neutraliza caja) |
 | **D6** | No hay dinero sin caja | ✅ | `desembolsar_sinCajaAbierta…` |
-| **D7** | Sin doble cobro | ⏳ pendiente | — (RN-EXT-03 sin prueba directa) |
+| **D7** | Sin doble cobro / doble extorno | ✅ | `ExtornoPagoTest.noSePuedeExtornarDosVeces` |
 
-> 🟢 **5 de 7 invariantes cubiertas o casi.** Pendientes: extorno de pago (D5), no-doble-extorno (D7),
-> y el INGRESO del pago verificado contra el movimiento (D2 completo).
+> 🟢 **6 de 7 invariantes cubiertas** (D1·D3·D4·D5·D6·D7). Falta solo completar **D2**
+> (verificar el INGRESO del pago contra el movimiento por concepto).
 
 ---
 
@@ -93,7 +95,7 @@
 | Pagos (parcial, mora, liquidación, excedente) | 5 casos | ✅ |
 | Caja: cuadre y cierre | 5 casos (`CajaCierreTest`) | ✅ |
 | Caja: conservación / movimientos / atomicidad | 4 casos (`DineroConservacionTest`, `MovimientoAtomicoTest`) | ✅ |
-| Extornos | 1 caso (desembolso neutraliza) | 🟡 falta pago y no-doble-extorno |
+| Extornos | 3 casos (desembolso + pago neutralizan caja, no doble extorno) | ✅ |
 | Cálculo por producto (FLAT/SALDO/FRANCES + gracia) | 5 casos (`CronogramaCalculoTest`) | ✅ |
 | Tasa aprobada vs producto | 1 caso (fija HALL-11, pendiente decisión) | 🟡 |
 | **Scope por agencia/rol** | 1 caso (`ScopeCarteraClientesPostgresTest`, PG real) | ✅ inicial |

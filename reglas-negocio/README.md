@@ -68,7 +68,7 @@ Cada archivo `reglas-negocio/<modulo>.md` sigue esta plantilla:
 | 3 | Movimientos (ingresos/egresos) | ✅ `movimientos-caja.md` | ✅ | ✅ HALL-06/07 **corregidos** | ✅ `DineroConservacionTest` + `MovimientoAtomicoTest` | ✅ doc lista |
 | 4 | Pago de cuotas / cobranza | ❌ doc | ❌ | ⚠️ HALL-12 **corregido** | ✅ `PagoLiquidacionTest` + `PagosIntegrationTest` | 🟧 falta doc |
 | 5 | Mora y feriados | ❌ | ❌ | ⚠️ deriva (hábiles vs calendario, HALL-01) | 🟡 1 caso (mora %) | 🔴 P1 |
-| 6 | Extornos | ✅ `extornos.md` | ✅ | ✅ HALL-08 **corregido** | 🟡 desembolso ✅, pago ❌ | ✅ doc lista |
+| 6 | Extornos | ✅ `extornos.md` | ✅ | ✅ HALL-08 **corregido** | ✅ desembolso + pago + no-doble (D5/D7) | ✅ doc lista |
 | 7 | Cálculo de cuotas (FLAT/SALDO/FRANCES) | ✅ `calculo-cuotas.md` | ✅ | ✅ HALL-09 **resuelto** | ✅ `CronogramaCalculoTest` (5) | ✅ doc lista |
 | 8 | Evaluación de crédito | ✅ `evaluacion.md` | ✅ | ✅ + HALL-10 | 🟡 parcial | ✅ doc lista |
 | 9 | Aprobación / comité | ✅ `aprobacion-comite.md` | ✅ | ✅ + HALL-11 | 🟡 parcial | ✅ doc lista |
