@@ -54,6 +54,12 @@ Sistema financiero white-label para gestión de créditos, cobranza y tesorería
 - [Arquitectura de producción (Nginx)](despliegue/arquitectura-produccion-nginx.md)
 - [Despliegue CrediDar en AWS](despliegue/despliegue-credidar-aws.md)
 
+### 🔒 Seguridad
+- [Auditoría de seguridad — junio 2026](seguridad/auditoria-seguridad-2026-06.md) — recon + código (OWASP): CORS, JWT, /api/files PII, cabeceras nginx
+
+### 🔀 Migración
+- [Migración Zeus → Reelige](migracion/migracion-zeus-a-reelige.md) — mapeo de esquemas, catálogos, hallazgos y plan (alcance: créditos vigentes)
+
 ### 🗺️ Roadmap
 - [2FA / doble verificación](roadmap/2fa-doble-verificacion.md)
 
