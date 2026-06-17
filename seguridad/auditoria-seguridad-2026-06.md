@@ -98,13 +98,13 @@ interceptor adjunta el token) y la muestra como blob. Aplicada al preview de adj
 
 ## 4. Pendientes / recomendaciones
 
-| Prioridad | Acción |
-|---|---|
-| 🟨 | Pasar la CSP de `Report-Only` a enforce tras revisar violaciones; self-hostear fuentes/iconos. |
-| 🟨 | Rotar el secreto JWT histórico que estuvo committeado. |
-| 🟦 | Verificar en SSL Labs que TLS 1.0/1.1 estén deshabilitados. |
-| 🟦 | Corregir typo `server_name reeligeclaud.com` en el bloque 443 (funciona por `default_server`). |
-| 🟦 | Considerar URLs firmadas para archivos como capa extra. |
+| Prioridad | Acción | Estado |
+|---|---|---|
+| 🟦 | Deshabilitar TLS 1.0/1.1 a nivel global de nginx | ✅ **Hecho** (2026-06-17): `ssl_protocols TLSv1.2 TLSv1.3;` en `nginx.conf` (el sitio HTTPS ya usaba 1.2/1.3 vía Certbot; esto cubre defensa en profundidad). |
+| 🟦 | ~~Corregir typo `server_name`~~ | ✅ **N/A**: el archivo vivo (`default`) ya dice `reeligecloud.com`; el typo estaba solo en el backup `default.bak`. |
+| 🟨 | Pasar la CSP de `Report-Only` a enforce tras revisar violaciones; self-hostear fuentes/iconos. | ⏳ Requiere observar violaciones reales en navegador antes de forzar (riesgo de romper el SPA). |
+| 🟨 | Rotar el secreto JWT histórico que estuvo committeado. | ⏳ Baja urgencia: piloto/prod ya usan secreto fuerte de 128 chars (no el default). Pendiente: limpiar el valor del historial de git. |
+| 🟦 | Considerar URLs firmadas (HMAC + expiry) para archivos como capa extra. | 📋 Backlog |
 
 ---
 
