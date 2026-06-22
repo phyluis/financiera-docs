@@ -61,6 +61,7 @@ Sistema financiero white-label para gestión de créditos, cobranza y tesorería
 - [Migración Zeus → Reelige](migracion/migracion-zeus-a-reelige.md) — mapeo de esquemas, catálogos, hallazgos y plan (alcance: créditos vigentes)
 
 ### 🗺️ Roadmap
+- [Req1 — Cobranza de campo con aprobación del cajero](roadmap/req1-cobranza-campo.md) ✅ implementado
 - [2FA / doble verificación](roadmap/2fa-doble-verificacion.md)
 
 ### 🎬 Demo
